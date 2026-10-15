@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Manager Dashboard - ProTrack Online Project Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon">⚡</div>
+            <div class="brand-text">
+                <h1>ProTrack</h1>
+                <span>Project Manager</span>
+            </div>
+        </div>
+
+        <div class="role-badge-panel">
+            <div class="role-badge-label">
+                <span>User Type</span>
+                <span style="font-size: 10px; color: #64748b;">Java OOP</span>
+            </div>
+            <div class="active-role-tag role-pm">
+                ● Project Manager
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">PM Controls</div>
+            <a href="#pm-overview" class="nav-item active">
+                <span class="nav-icon">🎯</span>
+                <span>1. Project Overview</span>
+            </a>
+            <a href="#pm-tasks" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span>2. Task Management</span>
+            </a>
+            <a href="#pm-reports" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span>3. Progress Reports</span>
+            </a>
+            <a href="#pm-team" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span>4. Team Member Overview</span>
+            </a>
+
+            <div class="nav-section-title" style="margin-top: 20px;">Switch Dashboards</div>
+            <a href="index.html" class="nav-item">
+                <span class="nav-icon">🔄</span>
+                <span>Unified Portal</span>
+            </a>
+            <a href="admin-dashboard.html" class="nav-item">
+                <span class="nav-icon">🛡️</span>
+                <span>Admin View</span>
+            </a>
+            <a href="team-dashboard.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span>Team Member View</span>
+            </a>
+            <a href="login.html" class="nav-item">
+                <span class="nav-icon">🔐</span>
+                <span>Login Portal</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-avatar-sm">AR</div>
+            <div class="user-meta">
+                <div class="user-meta-name">Alex Rivera</div>
+                <div class="user-meta-role">Project Manager</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <header class="top-header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" onclick="document.getElementById('appSidebar').classList.toggle('open')">☰</button>
+                <div class="page-title-box">
+                    <h2>Project Manager Dashboard</h2>
+                    <p>Create &amp; manage projects, assign tasks, monitor progress &amp; team performance</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="index.html" class="btn btn-secondary btn-sm">← Back to Main Portal</a>
+                <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddTaskModal()">+ Assign Task</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.dashboard.openAddProjectModal()">+ Create Project</button>
+            </div>
+        </header>
+
+        <main class="content-body">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">ACTIVE PROJECTS</span>
+                        <div class="metric-icon icon-blue">🎯</div>
+                    </div>
+                    <div class="metric-value" id="pmStatProjects">4</div>
+                    <div class="metric-footer"><span class="metric-trend trend-up">In Current Sprint</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">ASSIGNED TASKS</span>
+                        <div class="metric-icon icon-purple">📋</div>
+                    </div>
+                    <div class="metric-value" id="pmStatTasks">6</div>
+                    <div class="metric-footer"><span class="metric-trend trend-up">Tracked Live</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">COMPLETION RATE</span>
+                        <div class="metric-icon icon-emerald">🏆</div>
+                    </div>
+                    <div class="metric-value" id="pmStatRate">75%</div>
+                    <div class="metric-footer"><span class="metric-trend trend-up">On Schedule</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">ENGINEERING TEAM</span>
+                        <div class="metric-icon icon-amber">👥</div>
+                    </div>
+                    <div class="metric-value" id="pmStatTeam">3</div>
+                    <div class="metric-footer"><span class="metric-trend trend-up">Assigned Engineers</span></div>
+                </div>
+            </div>
+
+            <!-- 1. Project Overview -->
+            <div class="card-panel" id="pm-overview">
+                <div class="card-panel-header">
+                    <h4>🎯 1. Project Overview</h4>
+                    <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddProjectModal()">+ Create Project</button>
+                </div>
+                <div class="card-panel-body">
+                    <div class="metrics-grid" id="pmProjectsGrid" style="margin-bottom:0;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Task Management -->
+            <div class="card-panel" id="pm-tasks">
+                <div class="card-panel-header">
+                    <h4>📋 2. Task Management &amp; Assignments</h4>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('all')">All</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('In Progress')">In Progress</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('Pending')">Pending</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('Completed')">Completed</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddTaskModal()">+ Assign Task</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Task Title &amp; Project</th>
+                                <th>Assignee</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pmTasksTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. Progress Reports & 4. Team Member Overview -->
+            <div class="grid-2-col">
+                <!-- 3. Progress Reports -->
+                <div class="card-panel" id="pm-reports">
+                    <div class="card-panel-header">
+                        <h4>📊 3. Progress Reports &amp; Visualizations</h4>
+                        <span class="badge badge-in-progress">Real-Time Data</span>
+                    </div>
+                    <div class="card-panel-body">
+                        <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Task Status Breakdown</h5>
+                        <div class="chart-container" id="pmTaskDistributionChart"></div>
+
+                        <hr style="border:none; border-top:1px solid var(--border-light); margin:20px 0;">
+
+                        <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Project Progress Gauges</h5>
+                        <div id="pmProjectProgressBarChart"></div>
+                    </div>
+                </div>
+
+                <!-- 4. Team Member Overview -->
+                <div class="card-panel" id="pm-team">
+                    <div class="card-panel-header">
+                        <h4>👥 4. Team Member Overview &amp; Metrics</h4>
+                        <span class="badge badge-team">Workload Tracking</span>
+                    </div>
+                    <div class="card-panel-body">
+                        <div class="member-card-grid" id="pmTeamGrid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="taskModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4 id="taskModalTitle">Assign Task</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('taskModal')">&times;</button>
+        </div>
+        <form id="taskForm" onsubmit="window.dashboard.handleTaskFormSubmit(event)">
+            <input type="hidden" name="taskId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Task Title *</label>
+                    <input type="text" class="form-control" name="title" required placeholder="Task Title">
+                </div>
+                <div class="form-group">
+                    <label>Scope / Description</label>
+                    <textarea class="form-control" name="description" placeholder="Requirements and acceptance criteria..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Project *</label>
+                        <select class="form-control" name="projectId" id="taskProjectSelect" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assignee (Team Member) *</label>
+                        <select class="form-control" name="assigneeId" id="taskAssigneeSelect" required></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="form-control" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" name="status">
+                            <option value="Pending" selected>Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date *</label>
+                        <input type="date" class="form-control" name="dueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Hours</label>
+                        <input type="number" class="form-control" name="estimatedHours" value="20" min="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Progress Percentage (0 - 100%)</label>
+                        <input type="number" class="form-control" name="progress" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Logged Hours</label>
+                        <input type="number" class="form-control" name="loggedHours" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('taskModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Confirm Task Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="projectModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4 id="projectModalTitle">Create Project</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('projectModal')">&times;</button>
+        </div>
+        <form id="projectForm" onsubmit="window.dashboard.handleProjectFormSubmit(event)">
+            <input type="hidden" name="projectId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Project Title *</label>
+                    <input type="text" class="form-control" name="title" required placeholder="Project Name">
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea class="form-control" name="description" required placeholder="Scope and deliverables..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date *</label>
+                        <input type="date" class="form-control" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Delivery Date *</label>
+                        <input type="date" class="form-control" name="endDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" name="status">
+                            <option value="Planning">Planning</option>
+                            <option value="In Progress" selected>In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="form-control" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Assigned Project Manager *</label>
+                        <select class="form-control" name="managerId" id="projectManagerSelect" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Allocated Budget</label>
+                        <input type="text" class="form-control" name="budget" placeholder="$150,000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('projectModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboards.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        window.dashboard.switchRole('PROJECT_MANAGER');
+    });
+</script>
+</body>
+</html>

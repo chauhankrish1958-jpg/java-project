@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTrack - Online Project Management Tool (Java OOP)</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon">⚡</div>
+            <div class="brand-text">
+                <h1>ProTrack</h1>
+                <span>Enterprise Suite</span>
+            </div>
+        </div>
+
+        <!-- Active Role Badge -->
+        <div class="role-badge-panel">
+            <div class="role-badge-label">
+                <span>Active Role</span>
+                <span style="font-size: 10px; color: #64748b;">OOP Session</span>
+            </div>
+            <div id="sidebarRoleBadge" class="active-role-tag role-admin">
+                ● Administrator
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <!-- Navigation for Admin -->
+            <div id="navAdminSection">
+                <div class="nav-section-title">Admin Controls</div>
+                <a href="#admin-overview" class="nav-item active" onclick="window.dashboard.activateDashboardForRole('ADMIN')">
+                    <span class="nav-icon">📊</span>
+                    <span>Admin Dashboard</span>
+                </a>
+                <a href="#admin-users" class="nav-item" onclick="window.dashboard.activateDashboardForRole('ADMIN')">
+                    <span class="nav-icon">👥</span>
+                    <span>User Management</span>
+                </a>
+                <a href="#admin-projects" class="nav-item" onclick="window.dashboard.activateDashboardForRole('ADMIN')">
+                    <span class="nav-icon">📁</span>
+                    <span>Project Oversight</span>
+                </a>
+                <a href="#admin-settings" class="nav-item" onclick="window.dashboard.activateDashboardForRole('ADMIN')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>System Settings</span>
+                </a>
+                <a href="#admin-metrics" class="nav-item" onclick="window.dashboard.activateDashboardForRole('ADMIN')">
+                    <span class="nav-icon">📈</span>
+                    <span>Performance Metrics</span>
+                </a>
+            </div>
+
+            <!-- Navigation for Project Manager -->
+            <div id="navPmSection" style="display:none;">
+                <div class="nav-section-title">Project Management</div>
+                <a href="#pm-overview" class="nav-item active" onclick="window.dashboard.activateDashboardForRole('PROJECT_MANAGER')">
+                    <span class="nav-icon">🎯</span>
+                    <span>Project Overview</span>
+                </a>
+                <a href="#pm-tasks" class="nav-item" onclick="window.dashboard.activateDashboardForRole('PROJECT_MANAGER')">
+                    <span class="nav-icon">📋</span>
+                    <span>Task Management</span>
+                </a>
+                <a href="#pm-reports" class="nav-item" onclick="window.dashboard.activateDashboardForRole('PROJECT_MANAGER')">
+                    <span class="nav-icon">📊</span>
+                    <span>Progress Reports</span>
+                </a>
+                <a href="#pm-team" class="nav-item" onclick="window.dashboard.activateDashboardForRole('PROJECT_MANAGER')">
+                    <span class="nav-icon">👥</span>
+                    <span>Team Members</span>
+                </a>
+            </div>
+
+            <!-- Navigation for Team Member -->
+            <div id="navTeamSection" style="display:none;">
+                <div class="nav-section-title">Member Workspace</div>
+                <a href="#team-tasks" class="nav-item active" onclick="window.dashboard.activateDashboardForRole('TEAM_MEMBER')">
+                    <span class="nav-icon">✅</span>
+                    <span>My Assigned Tasks</span>
+                </a>
+                <a href="#team-projects" class="nav-item" onclick="window.dashboard.activateDashboardForRole('TEAM_MEMBER')">
+                    <span class="nav-icon">📁</span>
+                    <span>Project Details</span>
+                </a>
+                <a href="#team-profile" class="nav-item" onclick="window.dashboard.activateDashboardForRole('TEAM_MEMBER')">
+                    <span class="nav-icon">👤</span>
+                    <span>Profile Management</span>
+                </a>
+                <a href="#team-activity" class="nav-item" onclick="window.dashboard.activateDashboardForRole('TEAM_MEMBER')">
+                    <span class="nav-icon">🔔</span>
+                    <span>Activity Feed</span>
+                </a>
+            </div>
+
+            <div class="nav-section-title" style="margin-top: 20px;">Dedicated Views</div>
+            <a href="admin-dashboard.html" class="nav-item">
+                <span class="nav-icon">🛡️</span>
+                <span>Admin View (Page)</span>
+            </a>
+            <a href="pm-dashboard.html" class="nav-item">
+                <span class="nav-icon">💼</span>
+                <span>PM View (Page)</span>
+            </a>
+            <a href="team-dashboard.html" class="nav-item">
+                <span class="nav-icon">👨‍💻</span>
+                <span>Team View (Page)</span>
+            </a>
+            <a href="login.html" class="nav-item">
+                <span class="nav-icon">🔐</span>
+                <span>Role Login Portal</span>
+            </a>
+
+            <div style="padding: 16px 12px;">
+                <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; font-size: 11.5px; color: #cbd5e1; border-color: #334155; background: #1e293b;" onclick="if(confirm('Reset sample demo data back to factory defaults?')){window.store.resetToDefault(); location.reload();}">
+                    🔄 Reset Demo Data
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar User Footer -->
+        <div class="sidebar-footer">
+            <div class="user-avatar-sm currentUser-avatar">SJ</div>
+            <div class="user-meta">
+                <div class="user-meta-name currentUser-name">Sarah Jenkins</div>
+                <div class="user-meta-role currentUser-role">Administrator</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Top App Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" onclick="document.getElementById('appSidebar').classList.toggle('open')">☰</button>
+                <div class="page-title-box">
+                    <h2>Online Project Management Tool</h2>
+                    <p>Java OOP Enterprise Architecture Frontend</p>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <!-- Role Switcher Quick Bar -->
+                <div class="role-switcher-container">
+                    <button class="role-switch-btn active" data-role="ADMIN" onclick="window.dashboard.switchRole('ADMIN')">
+                        <span>🛡️</span>
+                        <span class="role-title-text">Admin</span>
+                    </button>
+                    <button class="role-switch-btn" data-role="PROJECT_MANAGER" onclick="window.dashboard.switchRole('PROJECT_MANAGER')">
+                        <span>💼</span>
+                        <span class="role-title-text">Project Manager</span>
+                    </button>
+                    <button class="role-switch-btn" data-role="TEAM_MEMBER" onclick="window.dashboard.switchRole('TEAM_MEMBER')">
+                        <span>👥</span>
+                        <span class="role-title-text">Team Member</span>
+                    </button>
+                </div>
+
+                <!-- User Persona Dropdown -->
+                <select id="userQuickSelect" class="user-quick-select" onchange="window.store.switchUserById(this.value)">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+        </header>
+
+        <!-- Content Body -->
+        <main class="content-body">
+
+            <!-- Banner Explaining OOP Integration -->
+            <div class="oop-banner">
+                <div class="oop-banner-text">
+                    <h4>Java OOP Architecture Implementation</h4>
+                    <p>Features Inheritance (<code>User</code> &rarr; <code>Admin</code>, <code>ProjectManager</code>, <code>TeamMember</code>), Encapsulation (Models &amp; Controllers), and Polymorphic Role Dashboards.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-sm btn-secondary" style="background:rgba(255,255,255,0.15); color:white; border-color:rgba(255,255,255,0.2);" onclick="window.ui.showToast('Java OOP Class models available under java-oop-reference/ folder.', 'info', 'OOP Reference')">
+                        ☕ Java Classes
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===============================================================
+                 VIEW 1: ADMIN DASHBOARD
+                 =============================================================== -->
+            <section id="view-admin" class="dashboard-view active">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h3>Administrator Control Center</h3>
+                        <p>Manage system users, oversee all enterprise projects, adjust global settings, and audit metrics.</p>
+                    </div>
+                    <div class="action-toolbar">
+                        <button class="btn btn-primary" onclick="window.dashboard.openAddUserModal()">
+                            + Add New User
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.dashboard.openAddProjectModal()">
+                            + Create Project
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">TOTAL REGISTERED USERS</span>
+                            <div class="metric-icon icon-blue">👥</div>
+                        </div>
+                        <div class="metric-value" id="adminStatUsers">6</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">↑ +2</span>
+                            <span>added this month</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">ENTERPRISE PROJECTS</span>
+                            <div class="metric-icon icon-purple">📁</div>
+                        </div>
+                        <div class="metric-value" id="adminStatProjects">4</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">100%</span>
+                            <span>healthy status</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">SYSTEM TASKS RECORDED</span>
+                            <div class="metric-icon icon-amber">📋</div>
+                        </div>
+                        <div class="metric-value" id="adminStatTasks">6</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">↑ 85%</span>
+                            <span>on-time delivery</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">AVG PROJECT PROGRESS</span>
+                            <div class="metric-icon icon-emerald">⚡</div>
+                        </div>
+                        <div class="metric-value" id="adminStatProgress">60%</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">↑ 12%</span>
+                            <span>from last sprint</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management Panel -->
+                <div class="card-panel" id="admin-users">
+                    <div class="card-panel-header">
+                        <h4>👥 User Management</h4>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div class="search-input-box" style="width:240px;">
+                                <span class="search-input-icon">🔍</span>
+                                <input type="text" class="form-control" placeholder="Search users by name, role..." oninput="window.dashboard.renderAdminUsersTable(this.value)">
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddUserModal()">+ Add User</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User Name &amp; Title</th>
+                                    <th>Email Address</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Phone</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Project Management Panel -->
+                <div class="card-panel" id="admin-projects">
+                    <div class="card-panel-header">
+                        <h4>📁 Project Management Oversight</h4>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div class="search-input-box" style="width:240px;">
+                                <span class="search-input-icon">🔍</span>
+                                <input type="text" class="form-control" placeholder="Search projects..." oninput="window.dashboard.renderAdminProjectsTable(this.value)">
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.openAddProjectModal()">+ Create Project</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Project Title &amp; Details</th>
+                                    <th>Assigned PM</th>
+                                    <th>Timeline</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Budget</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProjectsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2-Column: System Settings & Performance Metrics -->
+                <div class="grid-2-col" id="admin-settings">
+                    <!-- System Settings Panel -->
+                    <div class="card-panel">
+                        <div class="card-panel-header">
+                            <h4>⚙️ System Settings &amp; Configuration</h4>
+                            <span class="badge badge-admin">Superuser Control</span>
+                        </div>
+                        <div class="card-panel-body">
+                            <form id="adminSettingsForm" onsubmit="window.dashboard.handleSettingsFormSubmit(event)">
+                                <div class="form-group">
+                                    <label>System Application Name</label>
+                                    <input type="text" class="form-control" name="systemName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Organization / Tenant Name</label>
+                                    <input type="text" class="form-control" name="organizationName" required>
+                                </div>
+
+                                <div class="form-switch">
+                                    <div class="form-switch-label">
+                                        <strong>Maintenance Mode</strong>
+                                        <span>Disable team member access for upgrades</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" name="maintenanceMode">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="form-switch">
+                                    <div class="form-switch-label">
+                                        <strong>Automated Email Notifications</strong>
+                                        <span>Dispatch email alerts on task assignment</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" name="emailNotifications" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Default Task Priority</label>
+                                        <select class="form-control" name="defaultTaskPriority">
+                                            <option value="Low">Low</option>
+                                            <option value="Medium" selected>Medium</option>
+                                            <option value="High">High</option>
+                                            <option value="Urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Session Timeout (Minutes)</label>
+                                        <input type="number" class="form-control" name="sessionTimeout" min="15" max="240" value="60">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Max Projects per PM</label>
+                                        <input type="number" class="form-control" name="maxProjectsPerManager" min="1" max="50" value="10">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Security Level</label>
+                                        <select class="form-control" name="securityLevel">
+                                            <option value="Standard">Standard</option>
+                                            <option value="High (MFA Enabled)" selected>High (MFA Enabled)</option>
+                                            <option value="Maximum Enterprise">Maximum Enterprise</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                                    💾 Save System Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Performance Metrics Panel -->
+                    <div class="card-panel" id="admin-metrics">
+                        <div class="card-panel-header">
+                            <h4>📈 Performance &amp; Usage Metrics</h4>
+                            <span class="badge badge-completed">Live Telemetry</span>
+                        </div>
+                        <div class="card-panel-body">
+                            <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">User Role Distribution</h5>
+                            <div class="chart-container" id="adminUserRoleChart"></div>
+
+                            <hr style="border:none; border-top:1px solid var(--border-light); margin:20px 0;">
+
+                            <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Project Health Breakdown</h5>
+                            <div class="chart-container" id="adminProjectStatusChart"></div>
+
+                            <hr style="border:none; border-top:1px solid var(--border-light); margin:20px 0;">
+
+                            <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Infrastructure &amp; Usage Throughput</h5>
+                            <div id="adminMetricsBarChart"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===============================================================
+                 VIEW 2: PROJECT MANAGER DASHBOARD
+                 =============================================================== -->
+            <section id="view-pm" class="dashboard-view">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h3>Project Manager Dashboard</h3>
+                        <p>Track project timelines, assign and update team tasks, monitor completion rates, and balance workload.</p>
+                    </div>
+                    <div class="action-toolbar">
+                        <button class="btn btn-primary" onclick="window.dashboard.openAddTaskModal()">
+                            + Assign New Task
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.dashboard.openAddProjectModal()">
+                            + Create Project
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">MANAGED PROJECTS</span>
+                            <div class="metric-icon icon-blue">🎯</div>
+                        </div>
+                        <div class="metric-value" id="pmStatProjects">4</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">Active</span>
+                            <span>in current cycle</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">ASSIGNED TASKS</span>
+                            <div class="metric-icon icon-purple">📋</div>
+                        </div>
+                        <div class="metric-value" id="pmStatTasks">6</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">3 in progress</span>
+                            <span>across teams</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">TASK COMPLETION RATE</span>
+                            <div class="metric-icon icon-emerald">🏆</div>
+                        </div>
+                        <div class="metric-value" id="pmStatRate">75%</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">↑ +8%</span>
+                            <span>velocity improvement</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">ACTIVE TEAM MEMBERS</span>
+                            <div class="metric-icon icon-amber">👥</div>
+                        </div>
+                        <div class="metric-value" id="pmStatTeam">3</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">100%</span>
+                            <span>allocation capacity</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Overview Cards -->
+                <div class="card-panel" id="pm-overview">
+                    <div class="card-panel-header">
+                        <h4>🎯 Project Overview &amp; Status</h4>
+                        <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddProjectModal()">+ Create Project</button>
+                    </div>
+                    <div class="card-panel-body">
+                        <div class="metrics-grid" id="pmProjectsGrid" style="margin-bottom:0;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Management Section -->
+                <div class="card-panel" id="pm-tasks">
+                    <div class="card-panel-header">
+                        <h4>📋 Task Management &amp; Assignments</h4>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('all')">All</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('In Progress')">In Progress</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('Pending')">Pending</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderPmTasksTable('Completed')">Completed</button>
+                            <button class="btn btn-primary btn-sm" onclick="window.dashboard.openAddTaskModal()">+ Assign Task</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Task Title &amp; Project</th>
+                                    <th>Assignee</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pmTasksTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2-Column: Progress Reports & Team Member Overview -->
+                <div class="grid-2-col" id="pm-reports">
+                    <!-- Progress Reports Panel -->
+                    <div class="card-panel">
+                        <div class="card-panel-header">
+                            <h4>📊 Progress Reports &amp; Visualizations</h4>
+                            <span class="badge badge-in-progress">Real-Time Data</span>
+                        </div>
+                        <div class="card-panel-body">
+                            <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Task Status Distribution</h5>
+                            <div class="chart-container" id="pmTaskDistributionChart"></div>
+
+                            <hr style="border:none; border-top:1px solid var(--border-light); margin:20px 0;">
+
+                            <h5 style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Project Completion Benchmarks</h5>
+                            <div id="pmProjectProgressBarChart"></div>
+                        </div>
+                    </div>
+
+                    <!-- Team Member Overview -->
+                    <div class="card-panel" id="pm-team">
+                        <div class="card-panel-header">
+                            <h4>👥 Team Member Overview &amp; Metrics</h4>
+                            <span class="badge badge-team">Workload Tracking</span>
+                        </div>
+                        <div class="card-panel-body">
+                            <div class="member-card-grid" id="pmTeamGrid">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===============================================================
+                 VIEW 3: TEAM MEMBER DASHBOARD
+                 =============================================================== -->
+            <section id="view-team" class="dashboard-view">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h3>Team Member Workspace</h3>
+                        <p>Track your assigned tasks, update completion status and logged hours, view project deadlines, and manage profile.</p>
+                    </div>
+                    <div class="action-toolbar">
+                        <button class="btn btn-secondary" onclick="window.dashboard.openProjectDetailModal(1)">
+                            📁 View Project Details
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">MY ASSIGNED TASKS</span>
+                            <div class="metric-icon icon-blue">📋</div>
+                        </div>
+                        <div class="metric-value" id="teamStatAssigned">2</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">Current sprint</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">IN PROGRESS</span>
+                            <div class="metric-icon icon-purple">⚡</div>
+                        </div>
+                        <div class="metric-value" id="teamStatInProgress">1</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">Actively working</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">COMPLETED TASKS</span>
+                            <div class="metric-icon icon-emerald">✅</div>
+                        </div>
+                        <div class="metric-value" id="teamStatCompleted">1</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">Verified</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">TOTAL LOGGED HOURS</span>
+                            <div class="metric-icon icon-amber">⏱️</div>
+                        </div>
+                        <div class="metric-value" id="teamStatHours">24h</div>
+                        <div class="metric-footer">
+                            <span class="metric-trend trend-up">Productive</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned Tasks Table -->
+                <div class="card-panel" id="team-tasks">
+                    <div class="card-panel-header">
+                        <h4>✅ My Task List &amp; Status Tracking</h4>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderTeamTasksTable(window.store.getCurrentUser(), 'all')">All</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderTeamTasksTable(window.store.getCurrentUser(), 'In Progress')">In Progress</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderTeamTasksTable(window.store.getCurrentUser(), 'Pending')">Pending</button>
+                            <button class="btn btn-secondary btn-sm" onclick="window.dashboard.renderTeamTasksTable(window.store.getCurrentUser(), 'Completed')">Completed</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Task Title &amp; Description</th>
+                                    <th>Project</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Deadline</th>
+                                    <th>Progress</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teamTasksTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Projects Involved In -->
+                <div class="card-panel" id="team-projects">
+                    <div class="card-panel-header">
+                        <h4>📁 Project Details &amp; Deadlines</h4>
+                        <span class="badge badge-in-progress">Associated Projects</span>
+                    </div>
+                    <div class="card-panel-body">
+                        <div class="metrics-grid" id="teamProjectsList" style="margin-bottom:0;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column: Profile Management & Activity Feed -->
+                <div class="grid-2-col">
+                    <!-- Profile Management -->
+                    <div class="card-panel" id="team-profile">
+                        <div class="card-panel-header">
+                            <h4>👤 Profile Management</h4>
+                            <span class="badge badge-team">Personal Settings</span>
+                        </div>
+                        <div class="card-panel-body">
+                            <div class="profile-card">
+                                <div class="profile-avatar-lg" id="profileAvatarDisplay">DK</div>
+                                <div class="profile-card-details">
+                                    <h3 id="profileHeaderName">David Kim</h3>
+                                    <p id="profileHeaderRole">Lead Java Software Engineer</p>
+                                    <span class="badge badge-in-progress" style="margin-top:6px;">Active Account</span>
+                                </div>
+                            </div>
+
+                            <form id="profileForm" onsubmit="window.dashboard.handleProfileFormSubmit(event)">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Full Name</label>
+                                        <input type="text" class="form-control" name="profileName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email Address</label>
+                                        <input type="email" class="form-control" name="profileEmail" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>New Password (Optional)</label>
+                                        <input type="password" class="form-control" name="profilePassword" placeholder="••••••••">
+                                        <span class="form-hint">Leave blank to keep current password</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Contact Phone</label>
+                                        <input type="tel" class="form-control" name="profilePhone">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Department</label>
+                                        <input type="text" class="form-control" name="profileDepartment">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Job Title / Role</label>
+                                        <input type="text" class="form-control" name="profileTitle">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Professional Bio</label>
+                                    <textarea class="form-control" name="profileBio" rows="3"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                                    💾 Save Profile Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Activity Feed & Notifications -->
+                    <div class="card-panel" id="team-activity">
+                        <div class="card-panel-header">
+                            <h4>🔔 Activity Feed &amp; Notifications</h4>
+                            <span class="badge badge-in-progress">Live Updates</span>
+                        </div>
+                        <div class="card-panel-body activity-feed-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- =======================================================================
+     MODALS
+     ======================================================================= -->
+
+<!-- 1. User Modal (Add / Edit) -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4 id="userModalTitle">Add New User Account</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('userModal')">&times;</button>
+        </div>
+        <form id="userForm" onsubmit="window.dashboard.handleUserFormSubmit(event)">
+            <input type="hidden" name="userId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" class="form-control" name="name" required placeholder="e.g. John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" class="form-control" name="email" required placeholder="name@protrack.io">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>User Role *</label>
+                        <select class="form-control" name="role" required>
+                            <option value="ADMIN">Admin</option>
+                            <option value="PROJECT_MANAGER">Project Manager</option>
+                            <option value="TEAM_MEMBER" selected>Team Member</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" class="form-control" name="department" placeholder="e.g. Engineering">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Professional Title</label>
+                        <input type="text" class="form-control" name="title" placeholder="e.g. Senior Java Dev">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" class="form-control" name="phone" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('userModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save User Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. Project Modal (Create / Edit) -->
+<div class="modal-overlay" id="projectModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4 id="projectModalTitle">Create New Project</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('projectModal')">&times;</button>
+        </div>
+        <form id="projectForm" onsubmit="window.dashboard.handleProjectFormSubmit(event)">
+            <input type="hidden" name="projectId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Project Title *</label>
+                    <input type="text" class="form-control" name="title" required placeholder="e.g. Cloud Banking Modernization">
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea class="form-control" name="description" required placeholder="Provide project scope and objectives..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date *</label>
+                        <input type="date" class="form-control" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Delivery Date *</label>
+                        <input type="date" class="form-control" name="endDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" name="status">
+                            <option value="Planning">Planning</option>
+                            <option value="In Progress" selected>In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="form-control" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Assigned Project Manager *</label>
+                        <select class="form-control" name="managerId" id="projectManagerSelect" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Allocated Budget</label>
+                        <input type="text" class="form-control" name="budget" placeholder="$150,000">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('projectModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. Task Modal (Assign / Edit) -->
+<div class="modal-overlay" id="taskModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4 id="taskModalTitle">Assign New Task</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('taskModal')">&times;</button>
+        </div>
+        <form id="taskForm" onsubmit="window.dashboard.handleTaskFormSubmit(event)">
+            <input type="hidden" name="taskId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Task Title *</label>
+                    <input type="text" class="form-control" name="title" required placeholder="e.g. Implement OAuth2 JWT Auth Filter">
+                </div>
+                <div class="form-group">
+                    <label>Task Scope / Description</label>
+                    <textarea class="form-control" name="description" placeholder="Requirements, deliverables, and acceptance criteria..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Associated Project *</label>
+                        <select class="form-control" name="projectId" id="taskProjectSelect" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assignee (Team Member) *</label>
+                        <select class="form-control" name="assigneeId" id="taskAssigneeSelect" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select class="form-control" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" name="status">
+                            <option value="Pending" selected>Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date *</label>
+                        <input type="date" class="form-control" name="dueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Hours</label>
+                        <input type="number" class="form-control" name="estimatedHours" value="20" min="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Progress Percentage (0 - 100%)</label>
+                        <input type="number" class="form-control" name="progress" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Logged Hours</label>
+                        <input type="number" class="form-control" name="loggedHours" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('taskModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Confirm Task Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. Team Member Task Status Update Modal -->
+<div class="modal-overlay" id="statusUpdateModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h4>Update Task Status</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('statusUpdateModal')">&times;</button>
+        </div>
+        <form id="statusUpdateForm" onsubmit="window.dashboard.handleStatusUpdateSubmit(event)">
+            <input type="hidden" name="taskId">
+            <div class="modal-body">
+                <div style="background:#f8fafc; padding:14px; border-radius:var(--radius-md); margin-bottom:18px; border:1px solid var(--border-color);">
+                    <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Selected Task</div>
+                    <strong style="font-size:15px; color:var(--text-primary);" id="statusTaskTitle">Task Title</strong>
+                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;" id="statusProjectName">Project Name</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Status *</label>
+                    <select class="form-control" name="taskStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <label style="margin-bottom:0;">Completion Progress</label>
+                        <span id="progressOutputVal" style="font-weight:700; color:var(--primary);">50%</span>
+                    </div>
+                    <input type="range" class="form-control" name="taskProgress" min="0" max="100" step="5" value="50" oninput="document.getElementById('progressOutputVal').textContent = this.value + '%'" style="padding:4px;">
+                </div>
+
+                <div class="form-group">
+                    <label>Hours Logged</label>
+                    <input type="number" class="form-control" name="loggedHours" min="0" step="0.5" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Work Log / Progress Notes</label>
+                    <textarea class="form-control" name="updateNotes" placeholder="Describe the updates, PR link, or roadblocks..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('statusUpdateModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. Project Detail Modal -->
+<div class="modal-overlay" id="projectDetailModal">
+    <div class="modal-dialog" style="max-width: 650px;">
+        <div class="modal-header">
+            <h4 id="detailProjectTitle">Project Details</h4>
+            <button class="modal-close-btn" onclick="window.ui.closeModal('projectDetailModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span id="detailProjectStatusBadge"><span class="badge badge-in-progress">In Progress</span></span>
+                <span style="font-size:13px; color:var(--text-muted);">Allocated Budget: <strong style="color:var(--text-primary);" id="detailProjectBudget">$180,000</strong></span>
+            </div>
+
+            <p id="detailProjectDescription" style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:18px;">
+                Detailed project description will appear here.
+            </p>
+
+            <div style="background:#f8fafc; padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:20px;">
+                <div class="form-row">
+                    <div>
+                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; display:block;">Timeline</span>
+                        <strong style="font-size:13px; color:var(--text-primary);" id="detailProjectTimeline">Aug 01, 2026 to Dec 15, 2026</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; display:block;">Project Manager</span>
+                        <strong style="font-size:13px; color:var(--text-primary);" id="detailProjectManager">Alex Rivera</strong>
+                    </div>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                        <span style="font-weight:600; color:var(--text-secondary);">Overall Completion</span>
+                        <strong style="color:var(--primary);" id="detailProjectProgressVal">68%</strong>
+                    </div>
+                    <div class="progress-track" style="height:8px;">
+                        <div class="progress-fill" id="detailProjectProgressBar" style="width: 68%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 style="font-size:13px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                Assigned Project Tasks
+            </h5>
+            <ul id="detailProjectTaskList" style="list-style:none;">
+                <!-- Populated dynamically -->
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="window.ui.closeModal('projectDetailModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboards.js"></script>
+</body>
+</html>

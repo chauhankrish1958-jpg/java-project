@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ProTrack Enterprise (Java OOP)</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top right, #312e81 0%, #0f172a 100%);
+            padding: 24px;
+        }
+        .login-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .login-card-header {
+            padding: 32px 32px 24px 32px;
+            text-align: center;
+            background: #fafafa;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .login-body {
+            padding: 32px;
+        }
+        .persona-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .persona-btn:hover {
+            border-color: var(--primary);
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .divider span {
+            padding: 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-card-header">
+            <div class="brand-icon" style="margin: 0 auto 14px auto;">⚡</div>
+            <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary);">ProTrack Enterprise</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Online Project Management Tool (Java OOP)</p>
+        </div>
+
+        <div class="login-body">
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+                    Quick Demo Sign-In (Pick a Persona)
+                </label>
+            </div>
+
+            <!-- Persona 1: Admin -->
+            <button class="persona-btn" onclick="quickLogin(1, 'admin-dashboard.html')">
+                <div class="avatar-cell" style="background:#fee2e2; color:#991b1b; font-weight:700;">SJ</div>
+                <div style="flex:1;">
+                    <div style="font-size:13.5px; font-weight:600; color:var(--text-primary);">Sarah Jenkins</div>
+                    <div style="font-size:11.5px; color:var(--text-muted);">Administrator &bull; IT Operations</div>
+                </div>
+                <span class="badge badge-admin">Admin</span>
+            </button>
+
+            <!-- Persona 2: Project Manager -->
+            <button class="persona-btn" onclick="quickLogin(2, 'pm-dashboard.html')">
+                <div class="avatar-cell" style="background:#e0f2fe; color:#075985; font-weight:700;">AR</div>
+                <div style="flex:1;">
+                    <div style="font-size:13.5px; font-weight:600; color:var(--text-primary);">Alex Rivera</div>
+                    <div style="font-size:11.5px; color:var(--text-muted);">Project Manager &bull; Engineering</div>
+                </div>
+                <span class="badge badge-pm">PM</span>
+            </button>
+
+            <!-- Persona 3: Team Member -->
+            <button class="persona-btn" onclick="quickLogin(4, 'team-dashboard.html')">
+                <div class="avatar-cell" style="background:#d1fae5; color:#065f46; font-weight:700;">DK</div>
+                <div style="flex:1;">
+                    <div style="font-size:13.5px; font-weight:600; color:var(--text-primary);">David Kim</div>
+                    <div style="font-size:11.5px; color:var(--text-muted);">Lead Java Engineer &bull; Backend</div>
+                </div>
+                <span class="badge badge-team">Member</span>
+            </button>
+
+            <div class="divider">
+                <span>Or login with credentials</span>
+            </div>
+
+            <form onsubmit="handleManualLogin(event)">
+                <div class="form-group">
+                    <label>Work Email</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="user@protrack.io" required value="admin@protrack.io">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="password123">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    Sign In to Portal
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="index.html" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 500;">
+                    ← Directly Open Unified Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/store.js"></script>
+<script>
+    function quickLogin(userId, redirectUrl) {
+        window.store.switchUserById(userId);
+        window.location.href = redirectUrl;
+    }
+
+    function handleManualLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const users = window.store.getUsers();
+        const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+        if (found) {
+            window.store.setCurrentUser(found);
+            if (found.role === 'ADMIN') {
+                window.location.href = 'admin-dashboard.html';
+            } else if (found.role === 'PROJECT_MANAGER') {
+                window.location.href = 'pm-dashboard.html';
+            } else {
+                window.location.href = 'team-dashboard.html';
+            }
+        } else {
+            // Default login
+            window.store.setCurrentUser(users[0]);
+            window.location.href = 'index.html';
+        }
+    }
+</script>
+</body>
+</html>
