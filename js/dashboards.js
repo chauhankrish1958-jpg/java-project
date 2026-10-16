@@ -371,16 +371,22 @@ class DashboardController {
 
     // --- Admin & PM Project Actions ---
     openAddProjectModal() {
+        this.populateSelectDropdowns();
         const form = document.getElementById('projectForm');
         if (form) {
             form.reset();
             form.projectId.value = '';
             document.getElementById('projectModalTitle').textContent = 'Create New Project';
+            const pmSelect = document.getElementById('projectManagerSelect');
+            if (pmSelect && pmSelect.options.length > 0) {
+                pmSelect.selectedIndex = 0;
+            }
         }
         window.ui.openModal('projectModal');
     }
 
     openEditProjectModal(projectId) {
+        this.populateSelectDropdowns();
         const project = window.store.getProjectById(projectId);
         if (!project) return;
 
@@ -405,6 +411,12 @@ class DashboardController {
         const form = event.target;
         const projectId = form.projectId.value;
 
+        let managerIdVal = Number(form.managerId.value);
+        if (!managerIdVal) {
+            const firstPm = window.store.getUsers().find(u => (u.role || '').toUpperCase() === 'PROJECT_MANAGER');
+            managerIdVal = firstPm ? firstPm.id : 2;
+        }
+
         const projectData = {
             title: form.title.value.trim(),
             description: form.description.value.trim(),
@@ -412,8 +424,8 @@ class DashboardController {
             endDate: form.endDate.value,
             status: form.status.value,
             priority: form.priority.value,
-            managerId: form.managerId.value,
-            budget: form.budget.value.trim()
+            managerId: managerIdVal,
+            budget: form.budget.value.trim() || "$50,000"
         };
 
         if (projectId) {
@@ -1052,15 +1064,19 @@ class DashboardController {
 
     // Populate dropdowns (Managers, Projects, Assignees)
     populateSelectDropdowns() {
-        const users = window.store.getUsers();
+        let users = window.store.getUsers();
+        if (!users || users.length === 0) {
+            window.store.resetToDefault();
+            users = window.store.getUsers();
+        }
         const projects = window.store.getProjects();
 
         // Quick user select in header
         const userQuickSelect = document.getElementById('userQuickSelect');
-        if (userQuickSelect) {
+        if (userQuickSelect && users.length > 0) {
             const current = window.store.getCurrentUser();
             userQuickSelect.innerHTML = users.map(u => `
-                <option value="${u.id}" ${u.id === current.id ? 'selected' : ''}>
+                <option value="${u.id}" ${current && u.id === current.id ? 'selected' : ''}>
                     ${u.name} (${u.role === 'ADMIN' ? 'Admin' : u.role === 'PROJECT_MANAGER' ? 'Project Manager' : 'Team Member'})
                 </option>
             `).join('');
@@ -1069,26 +1085,44 @@ class DashboardController {
         // Project Form Manager Select
         const pmSelect = document.getElementById('projectManagerSelect');
         if (pmSelect) {
-            const pms = users.filter(u => u.role === 'PROJECT_MANAGER' || u.role === 'ADMIN');
-            pmSelect.innerHTML = pms.map(u => `
-                <option value="${u.id}">${u.name} (${u.department})</option>
+            const pms = users.filter(u => {
+                const r = (u.role || '').toUpperCase();
+                return r === 'PROJECT_MANAGER' || r === 'ADMIN';
+            });
+            const managersList = pms.length > 0 ? pms : users;
+            const currentSelected = pmSelect.value;
+            pmSelect.innerHTML = managersList.map((u, idx) => `
+                <option value="${u.id}" ${currentSelected == u.id || (!currentSelected && idx === 0) ? 'selected' : ''}>
+                    ${u.name} (${u.department || 'Project Manager'})
+                </option>
             `).join('');
         }
 
         // Task Form Project Select
         const taskProjectSelect = document.getElementById('taskProjectSelect');
         if (taskProjectSelect) {
-            taskProjectSelect.innerHTML = projects.map(p => `
-                <option value="${p.id}">${p.title}</option>
-            `).join('');
+            if (projects && projects.length > 0) {
+                const currentSelected = taskProjectSelect.value;
+                taskProjectSelect.innerHTML = projects.map((p, idx) => `
+                    <option value="${p.id}" ${currentSelected == p.id || (!currentSelected && idx === 0) ? 'selected' : ''}>
+                        ${p.title}
+                    </option>
+                `).join('');
+            } else {
+                taskProjectSelect.innerHTML = `<option value="1">General Project</option>`;
+            }
         }
 
         // Task Form Assignee Select
         const taskAssigneeSelect = document.getElementById('taskAssigneeSelect');
         if (taskAssigneeSelect) {
-            const members = users.filter(u => u.role === 'TEAM_MEMBER');
-            taskAssigneeSelect.innerHTML = members.map(m => `
-                <option value="${m.id}">${m.name} (${m.department})</option>
+            const members = users.filter(u => (u.role || '').toUpperCase() === 'TEAM_MEMBER');
+            const assignees = members.length > 0 ? members : users;
+            const currentSelected = taskAssigneeSelect.value;
+            taskAssigneeSelect.innerHTML = assignees.map((m, idx) => `
+                <option value="${m.id}" ${currentSelected == m.id || (!currentSelected && idx === 0) ? 'selected' : ''}>
+                    ${m.name} (${m.department || m.title || 'Engineering'})
+                </option>
             `).join('');
         }
     }
