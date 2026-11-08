@@ -1,0 +1,12 @@
+target/
+tomcat/
+data/
+maven
+maven/
+*.log
+.DS_Store
+.idea/
+*.iml
+.settings/
+.classpath
+.project
