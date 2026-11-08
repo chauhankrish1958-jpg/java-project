@@ -12,7 +12,7 @@
 3. [MVC System Architecture](#3-mvc-system-architecture)
 4. [Database Design & ER Diagram](#4-database-design--er-diagram)
 5. [User Roles & Access Control Matrix](#5-user-roles--access-control-matrix)
-6. [Core Java Concepts Demonstrated (Viva Reference)](#6-core-java-concepts-demonstrated-viva-reference)
+6. [Core Java Concepts Demonstrated](#6-core-java-concepts-demonstrated)
 7. [JDBC & Database Architecture Deep Dive](#7-jdbc--database-architecture-deep-dive)
 8. [Servlet & Filter Implementation Details](#8-servlet--filter-implementation-details)
 9. [Innovative & Standout Features](#9-innovative--standout-features)
@@ -241,7 +241,7 @@ erDiagram
 
 ---
 
-## 6. Core Java Concepts Demonstrated (Viva Reference)
+## 6. Core Java Concepts Demonstrated
 
 ### A. Object-Oriented Programming (OOP)
 1. **Abstraction:**
