@@ -19,7 +19,6 @@
 10. [Step-by-Step Installation & Deployment](#10-step-by-step-installation--deployment)
 11. [Default Login Accounts](#11-default-login-accounts)
 12. [Testing & Quality Assurance Checklist](#12-testing--quality-assurance-checklist)
-13. [Top 10 Viva Questions & Detailed Answers](#13-top-10-viva-questions--detailed-answers)
 
 ---
 
@@ -413,49 +412,6 @@ You can verify all unit tests at any time using:
 - [x] **Deadline Alerts:** Overdue and Due Today tasks trigger warning banners.
 - [x] **Audit Trail:** Modifying a task or project creates an entry in `activity_logs`.
 - [x] **XSS Protection:** Input sanitization neutralizes HTML/script injection attempts.
-
----
-
-## 13. Top 10 Viva Questions & Detailed Answers
-
-### Q1: Why did you choose Jakarta Servlets and JSP instead of Spring Boot for this project?
-> **Answer:** Spring Boot abstracts away fundamental enterprise mechanics behind annotations (`@Autowired`, `@RestController`, `@Repository`). Building ProTrack using pure Jakarta Servlets, JSP, and JDBC demonstrates a direct understanding of HTTP protocol handling, servlet lifecycles (`init`, `service`, `destroy`), session management, request dispatching, and manual JDBC connection handling.
-
-### Q2: What is the Model-View-Controller (MVC) architecture, and how is it implemented in ProTrack?
-> **Answer:**
-> - **Model (`com.protrack.model` & `dao`):** Contains entity classes (`User`, `Project`, `Task`) and database access objects (`UserDAOImpl`, `ProjectDAOImpl`) that handle SQL operations.
-> - **View (`WEB-INF/views/`):** JSP pages containing HTML5, CSS3, and presentation tags that display data to the user without executing direct SQL.
-> - **Controller (`com.protrack.servlet`):** Servlets that intercept HTTP requests, validate input, invoke services, bind data to request attributes, and forward to the appropriate JSP.
-
-### Q3: Why is PreparedStatement preferred over Statement in JDBC?
-> **Answer:**
-> 1. **Security:** `PreparedStatement` precompiles SQL statements and treats parameters strictly as data values, preventing SQL Injection.
-> 2. **Performance:** The database compiles the query execution plan once and reuses it for subsequent executions with different parameter values.
-
-### Q4: How does ProTrack prevent unauthorized URL access by different roles?
-> **Answer:** Through `AuthenticationFilter`, which intercepts all requests before reaching Servlets. It inspects `session.getAttribute("currentUser")`. If an unauthenticated user requests a protected resource, they are redirected to `/login`. If an authenticated `TEAM_MEMBER` enters an `/admin/*` URL, the filter intercepts the request and forwards to `/WEB-INF/views/error/403.jsp`.
-
-### Q5: How is password security implemented in ProTrack?
-> **Answer:** Passwords are never stored in plain text. ProTrack implements the **BCrypt** hashing algorithm (`$2a$10$...`) with an embedded salt. Even if the database were compromised, dictionary attacks and rainbow tables cannot reverse the hashes.
-
-### Q6: How do you handle JDBC transactions in ProTrack?
-> **Answer:** In `ProjectDAOImpl.saveWithMembers()`, multi-table consistency is maintained. We disable autocommit with `conn.setAutoCommit(false)`. We insert the project, obtain the generated key, and batch-insert member mappings. If both succeed, `conn.commit()` is called. In the `catch` block, `conn.rollback()` restores the database state.
-
-### Q7: Where are JSP files stored, and why are they placed under `WEB-INF/views/`?
-> **Answer:** Files placed directly in the web root can be accessed by typing the URL into a browser. Placing JSP files under `WEB-INF/` blocks direct client access (clients receive 404). JSP pages can only be rendered via server-side dispatching (`RequestDispatcher.forward()`) through a controller Servlet.
-
-### Q8: What is the difference between `sendRedirect()` and `RequestDispatcher.forward()`?
-> **Answer:**
-> - `forward()` is performed entirely on the server side within the same request-response cycle; the browser URL does not change, and request attributes are preserved.
-> - `sendRedirect()` sends an HTTP 302 response to the client instructing the browser to issue a new GET request to a different URL; request attributes are lost (which is why flash messages use the session).
-
-### Q9: How are project completion percentages calculated?
-> **Answer:** Aggregate SQL queries calculate `total_tasks` and `completed_tasks` per project:
-> `SELECT COUNT(*) FROM tasks WHERE project_id = ? AND status = 'COMPLETED'`.
-> In Java, the entity calculates: `(completedTasks * 100) / totalTasks`.
-
-### Q10: How does the application handle database configuration across environments?
-> **Answer:** `DBConnection` loads credentials from `db.properties` via classpath class loader. It also checks system environment variables (`DB_URL`, `DB_USER`, `DB_PASSWORD`), allowing deployment in containerized environments (Docker) without code modifications.
 
 ---
 
