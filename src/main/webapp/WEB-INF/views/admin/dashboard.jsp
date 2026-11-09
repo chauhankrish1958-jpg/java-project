@@ -5,6 +5,7 @@
 <%@ page import="com.protrack.model.Task" %>
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.model.TaskPriority" %>
+<%@ page import="com.protrack.scheduler.OverdueTaskScanner.MetricsSnapshot" %>
 <%@ page import="com.protrack.util.DateUtil" %>
 <%@ page import="com.protrack.util.ValidationUtil" %>
 <%
@@ -122,6 +123,68 @@
                     </div>
                     <div class="stat-value text-danger"><%= overdueTasks %></div>
                     <small class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> Past due date</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concurrency & Multithreading Monitor Card -->
+        <%
+            MetricsSnapshot schedMetrics = (MetricsSnapshot) request.getAttribute("schedulerMetrics");
+        %>
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #f8fafc;">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 border-bottom pb-3 border-secondary border-opacity-25">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-25 p-2 me-3 text-info fs-4">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-white">Background Overdue Task Daemon</h6>
+                            <small class="text-light opacity-75">Core Java Multithreading & Concurrency Monitor</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-2">
+                            <i class="bi bi-activity me-1"></i> ScheduledExecutorService Active
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row g-3 text-center text-sm-start">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-light opacity-75 mb-1">Thread Pool Execution</div>
+                        <div class="fw-bold fs-6 text-info font-monospace text-truncate">
+                            <%= schedMetrics != null && schedMetrics.threadName() != null ? ValidationUtil.escapeXml(schedMetrics.threadName()) : "ProTrack-OverdueTaskMonitor" %>
+                        </div>
+                        <small class="text-secondary" style="font-size: 0.75rem;">Daemon Thread (Interval: 120s)</small>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-light opacity-75 mb-1">Synchronization Primitive</div>
+                        <div class="fw-bold fs-6 text-warning">
+                            <i class="bi bi-lock-fill me-1"></i> ReentrantLock
+                        </div>
+                        <small class="text-secondary" style="font-size: 0.75rem;">Guarded Shared Counters</small>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-light opacity-75 mb-1">Total Scans Executed</div>
+                        <div class="fw-bold fs-5 text-white">
+                            <%= schedMetrics != null ? schedMetrics.totalScans() : 0 %>
+                            <span class="fs-6 fw-normal text-secondary">runs</span>
+                        </div>
+                        <small class="text-secondary" style="font-size: 0.75rem;">Atomic Thread-Safe Metric</small>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="small text-light opacity-75 mb-1">Last Scan Result</div>
+                        <div class="fw-bold fs-6 text-<%= (schedMetrics != null && schedMetrics.lastOverdueCount() > 0) ? "danger" : "success" %>">
+                            <%= schedMetrics != null ? schedMetrics.lastOverdueCount() : 0 %> Overdue Tasks Flagged
+                        </div>
+                        <small class="text-secondary" style="font-size: 0.75rem;">
+                            <%= schedMetrics != null ? schedMetrics.lastScanTime() : "Pending" %> (<%= schedMetrics != null ? schedMetrics.lastDurationMs() : 0 %>ms)
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>

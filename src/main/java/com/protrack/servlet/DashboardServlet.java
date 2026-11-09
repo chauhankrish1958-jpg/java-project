@@ -45,6 +45,7 @@ public class DashboardServlet extends HttpServlet {
         if (uri.endsWith("/admin/dashboard")) {
             Map<String, Object> adminData = dashboardService.getAdminDashboardData();
             adminData.forEach(request::setAttribute);
+            request.setAttribute("schedulerMetrics", com.protrack.scheduler.OverdueTaskScanner.getInstance().getMetricsSnapshot());
             request.getRequestDispatcher("/WEB-INF/views/admin/dashboard.jsp").forward(request, response);
         } else if (uri.endsWith("/manager/dashboard")) {
             Map<String, Object> managerData = dashboardService.getManagerDashboardData(currentUser.getId());

@@ -17,6 +17,9 @@
     <listener>
         <listener-class>com.protrack.listener.DBPoolContextListener</listener-class>
     </listener>
+    <listener>
+        <listener-class>com.protrack.listener.TaskSchedulerListener</listener-class>
+    </listener>
 
     <!-- Explicit Filter Pipeline Ordering: EncodingFilter First, then AuthenticationFilter -->
     <filter>

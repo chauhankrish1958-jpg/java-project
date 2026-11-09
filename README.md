@@ -47,7 +47,7 @@
 | **Visual Analytics** | Chart.js | Chart.js 4.4.1 (Doughnut & Bar charts) |
 | **Password & Token Security** | BCrypt & SecureRandom | OpenBSD Blowfish password hashing & cryptographic CSRF tokens |
 | **Build & Packaging Tool** | Apache Maven | Maven 3.9+ (Produces standard `protrack.war`) |
-| **Automated Testing** | JUnit 5 & Mockito | 63 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
+| **Automated Testing** | JUnit 5 & Mockito | 68 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
 
 ---
 
@@ -112,6 +112,8 @@ protrack/
 │   │   │   │   └── impl/                 # JDBC implementations with PreparedStatements
 │   │   │   ├── service/                  # Business logic, metrics & ownership checks
 │   │   │   ├── filter/                   # EncodingFilter & AuthenticationFilter (RBAC + CSRF + Matrix guard)
+│   │   │   ├── scheduler/                # Background ScheduledExecutorService & ReentrantLock daemon
+│   │   │   ├── listener/                 # DBPoolContextListener & TaskSchedulerListener (Lifecycle hooks)
 │   │   │   └── servlet/                  # Jakarta HTTP Servlets (Controllers)
 │   │   ├── resources/
 │   │   │   ├── db.properties             # Database connection credentials (env overrides supported)
@@ -136,6 +138,7 @@ protrack/
 │       ├── java/com/protrack/
 │       │   ├── dao/ProjectDAORollbackTest.java     # Atomic transaction rollback tests
 │       │   ├── filter/SecurityRBACAndAuthTest.java # RBAC, matrix URL bypass, CSRF & stale session tests
+│       │   ├── scheduler/OverdueTaskScannerTest.java # Multithreading & ReentrantLock concurrency tests
 │       │   ├── service/RegistrationSecurityTest.java # Role escalation & 8-char password tests
 │       │   ├── service/TaskAuthorizationTest.java  # Task ownership, assignee validation & status update tests
 │       │   ├── service/UserServiceProtectionTest.java # Admin self-protection & last admin safeguard tests
@@ -279,6 +282,21 @@ erDiagram
 ### C. Collections and Generics
 - Extensive use of generic collections: `List<User>`, `List<Project>`, `List<Task>`, `Map<String, Object>`, `EnumMap<TaskStatus, Integer>`.
 - Generics in DAO pattern: `GenericDAO<T, ID>` enables reusable interfaces for any entity.
+
+### D. Multithreading, Concurrency & Synchronization
+1. **Asynchronous Daemon Task Scheduling (`ScheduledExecutorService`):**
+   - [`OverdueTaskScanner`](file:///Users/krishchauhan/Downloads/project%202/src/main/java/com/protrack/scheduler/OverdueTaskScanner.java) employs `Executors.newSingleThreadScheduledExecutor` with a custom `ThreadFactory` creating named daemon worker threads (`ProTrack-OverdueTaskMonitor-X`).
+   - Automatically initiated upon web application startup via [`TaskSchedulerListener`](file:///Users/krishchauhan/Downloads/project%202/src/main/java/com/protrack/listener/TaskSchedulerListener.java) (`ServletContextListener`), it runs periodic background scans (default interval: 120s) checking for overdue tasks without blocking incoming HTTP worker threads.
+   - Graceful shutdown logic (`scheduler.shutdownNow()` and `awaitTermination()`) prevents thread or resource leaks upon servlet context destruction.
+2. **Explicit Thread Synchronization (`ReentrantLock`):**
+   - A `java.util.concurrent.locks.ReentrantLock` is used with standard `lock.lock()` and `try ... finally { lock.unlock(); }` idiom to guard shared multi-field scan metrics (`totalScansCompleted`, `lastOverdueDetectedCount`, `lastScanDurationMs`, `lastScanTime`, `lastThreadName`).
+   - Guarantees atomicity and prevents race conditions when concurrent background scans or manual invocations update shared counters.
+3. **Intrinsic Lock Synchronization (`synchronized`):**
+   - The method `getMetricsSnapshot()` is `synchronized` and acquires the `ReentrantLock` to construct and return an immutable Java 17 `MetricsSnapshot` record, ensuring consistent memory visibility across HTTP request threads reading live stats for the Admin Dashboard.
+4. **Thread-Safe Concurrent Rate Limiting (`ConcurrentHashMap`):**
+   - [`LoginAttemptTracker`](file:///Users/krishchauhan/Downloads/project%202/src/main/java/com/protrack/util/LoginAttemptTracker.java) employs `ConcurrentHashMap` with atomic `compute()` operations to track and throttle concurrent login attempts per `email:ip` without external locking overhead.
+5. **Visible Dashboard Concurrency Monitor:**
+   - The Admin Dashboard features a prominent **"Background Overdue Task Daemon"** card that renders live metrics directly from the thread pool: active thread name, total scans completed, overdue tasks flagged, and execution duration.
 
 ---
 
@@ -441,10 +459,11 @@ Execute the entire test suite using:
 ./mvnw test
 ```
 
-### Automated Test Suite Overview (63 Tests — 100% Passing):
+### Automated Test Suite Overview (68 Tests — 100% Passing):
 
 | Test Suite Class | Tests | Category | Key Assertions & Scenarios Verified |
 | :--- | :---: | :--- | :--- |
+| **`OverdueTaskScannerTest`** | 5 | Concurrency & Scheduler | • Thread-safe concurrent counter updates under `ReentrantLock`<br>• `ScheduledExecutorService` lifecycle management (start/stop)<br>• Overdue task scan execution via mock DAO<br>• Graceful database failure handling without crashing daemon thread<br>• Snapshot immutability across concurrent readers |
 | **`TaskServletAuthorizationTest`** | 6 | Servlet & Security | • Project Manager blocked from cross-project task move (target project ownership check)<br>• Project Manager blocked from editing tasks in unmanaged projects<br>• Manager `/manager/tasks` scoped to manager's projects at DAO level<br>• Manager searching unowned `projectId` returns empty list<br>• Administrator sees all tasks across all projects<br>• Malformed date strings trigger descriptive format error |
 | **`ProjectServletAuthorizationTest`** | 6 | Servlet & Ownership | • Project Manager viewing unmanaged project denied with HTTP 403 Forbidden (`403.jsp`)<br>• Project Manager viewing owned project succeeds (`manager/project-detail.jsp`)<br>• Administrator viewing any project workspace succeeds (`admin/project-detail.jsp`)<br>• Team Member viewing unassigned project denied with HTTP 403 Forbidden<br>• Team Member viewing assigned project succeeds and receives filtered list containing only their own tasks (`member/project-detail.jsp`)<br>• Malformed date strings trigger descriptive format error |
 | **`LogoutServletTest`** | 4 | Servlet & CSRF | • GET /logout while logged in safely redirects to dashboard without invalidating session<br>• GET /logout while unauthenticated returns HTTP 405 Method Not Allowed<br>• POST /logout with valid CSRF token invalidates session and redirects to /login<br>• POST /logout with missing or invalid CSRF token returns HTTP 403 Forbidden |
@@ -459,7 +478,7 @@ Execute the entire test suite using:
 
 ```
 [INFO] Results:
-[INFO] Tests run: 63, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 68, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
@@ -486,6 +505,7 @@ Execute the entire test suite using:
 - [x] **Internal Error Masking & Server Logging:** `500.jsp` and servlet catch blocks mask internal stack traces and log server-side (`application.log` and `getServletContext().log`).
 - [x] **Date Format Validation:** Malformed date strings trigger `"Invalid date format (expected yyyy-MM-dd)"`.
 - [x] **SameSite Cookie Configuration:** Session cookies protected with `SameSite=Lax` via Servlet 6 attribute declaration in `web.xml`.
+- [x] **Background Task Daemon & Concurrency:** Periodic overdue task monitor runs via `ScheduledExecutorService` with shared metrics guarded by `ReentrantLock` and visible on the Admin Dashboard.
 
 ---
 
