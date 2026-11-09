@@ -59,12 +59,15 @@ public class TaskService {
 
     public Task createTask(String title, String description, int projectId, Integer assignedTo,
                            TaskPriority priority, TaskStatus status, Date startDate, Date dueDate, Integer creatorUserId) throws AppException {
-        String cleanTitle = ValidationUtil.sanitize(title);
-        String cleanDesc = ValidationUtil.sanitize(description);
-
-        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
+        if (!ValidationUtil.isNotEmpty(title)) {
             throw new AppException("Task title is required.");
         }
+        String trimmedTitle = title.trim();
+        if (trimmedTitle.length() < 2 || trimmedTitle.length() > 150) {
+            throw new AppException("Task title must be between 2 and 150 characters.");
+        }
+        String trimmedDesc = description != null ? description.trim() : "";
+
         if (projectId <= 0) {
             throw new AppException("A valid project must be selected.");
         }
@@ -75,7 +78,7 @@ public class TaskService {
             throw new AppException("Due date cannot be before start date.");
         }
 
-        Task task = new Task(0, cleanTitle, cleanDesc, projectId, assignedTo,
+        Task task = new Task(0, trimmedTitle, trimmedDesc, projectId, assignedTo,
                 priority != null ? priority : TaskPriority.MEDIUM,
                 status != null ? status : TaskStatus.TODO,
                 startDate, dueDate, creatorUserId);
@@ -90,12 +93,15 @@ public class TaskService {
                            TaskPriority priority, TaskStatus status, Date startDate, Date dueDate, Integer actorUserId) throws AppException {
         Task existing = getTaskById(taskId);
 
-        String cleanTitle = ValidationUtil.sanitize(title);
-        String cleanDesc = ValidationUtil.sanitize(description);
-
-        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
+        if (!ValidationUtil.isNotEmpty(title)) {
             throw new AppException("Task title is required.");
         }
+        String trimmedTitle = title.trim();
+        if (trimmedTitle.length() < 2 || trimmedTitle.length() > 150) {
+            throw new AppException("Task title must be between 2 and 150 characters.");
+        }
+        String trimmedDesc = description != null ? description.trim() : "";
+
         if (dueDate == null) {
             throw new AppException("Task due date is required.");
         }
@@ -103,8 +109,8 @@ public class TaskService {
             throw new AppException("Due date cannot be before start date.");
         }
 
-        existing.setTaskTitle(cleanTitle);
-        existing.setDescription(cleanDesc);
+        existing.setTaskTitle(trimmedTitle);
+        existing.setDescription(trimmedDesc);
         existing.setProjectId(projectId);
         existing.setAssignedTo(assignedTo);
         if (priority != null) existing.setPriority(priority);

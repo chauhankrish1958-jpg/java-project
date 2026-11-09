@@ -46,22 +46,27 @@ public class RegistrationSecurityTest {
     }
 
     @Test
-    @DisplayName("Verify registration sanitizes script tags in full name to prevent stored XSS")
-    public void testRegistrationSanitizesXSSInFullName() throws AppException {
-        String xssPayload = "<script>alert('pwned')</script>John Doe";
-
-        when(mockUserDAO.emailExists("john@protrack.com", null)).thenReturn(false);
+    @DisplayName("Verify registration preserves raw name characters (e.g. & in R&D) and validates name length")
+    public void testRegistrationPreservesRawNameAndValidatesLength() throws AppException {
+        when(mockUserDAO.emailExists("rnd@protrack.com", null)).thenReturn(false);
         when(mockUserDAO.save(any(User.class))).thenAnswer(invocation -> {
             User u = invocation.getArgument(0);
             u.setId(10);
             return u;
         });
 
-        User saved = authService.register(xssPayload, "john@protrack.com", "securePass123", Role.TEAM_MEMBER);
-
+        // 1. Verify characters like & and quotes are not prematurely HTML escaped before storage
+        User saved = authService.register("R&D Engineer", "rnd@protrack.com", "securePass123", Role.TEAM_MEMBER);
         assertNotNull(saved);
-        assertFalse(saved.getFullName().contains("<script>"));
-        assertTrue(saved.getFullName().contains("&lt;script&gt;"));
+        assertEquals("R&D Engineer", saved.getFullName(), "Raw characters must be preserved without premature double-escaping");
+
+        // 2. Verify empty or too short full names are rejected
+        assertThrows(AppException.class, () -> {
+            authService.register("   ", "blank@protrack.com", "securePass123", Role.TEAM_MEMBER);
+        });
+        assertThrows(AppException.class, () -> {
+            authService.register("A", "short@protrack.com", "securePass123", Role.TEAM_MEMBER);
+        });
     }
 
     @Test

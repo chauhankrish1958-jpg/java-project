@@ -87,10 +87,10 @@
     <% if (user != null) { %>
     <div class="sidebar-user">
         <div class="user-avatar">
-            <%= user.getFullName() != null && user.getFullName().length() > 0 ? com.protrack.util.ValidationUtil.sanitize(user.getFullName().substring(0, 1).toUpperCase()) : "U" %>
+            <%= user.getFullName() != null && user.getFullName().length() > 0 ? com.protrack.util.ValidationUtil.escapeXml(user.getFullName().substring(0, 1).toUpperCase()) : "U" %>
         </div>
         <div class="user-info">
-            <div class="user-name" title="<%= com.protrack.util.ValidationUtil.sanitize(user.getFullName()) %>"><%= com.protrack.util.ValidationUtil.sanitize(user.getFullName()) %></div>
+            <div class="user-name" title="<%= com.protrack.util.ValidationUtil.escapeXml(user.getFullName()) %>"><%= com.protrack.util.ValidationUtil.escapeXml(user.getFullName()) %></div>
             <div class="user-role"><%= user.getRole().getDisplayName() %></div>
         </div>
     </div>

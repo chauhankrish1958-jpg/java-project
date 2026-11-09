@@ -26,10 +26,11 @@ public class ValidationUtil {
     }
 
     /**
-     * Cross-Site Scripting (XSS) sanitization and HTML escaping.
-     * Replaces HTML control characters with safe XML/HTML entities.
+     * Contextual XML/HTML output escaping for XSS defense.
+     * Converts raw text characters (&, <, >, ", ') into safe XML entities for safe JSP rendering.
+     * Prevents XSS while keeping raw database records uncorrupted.
      */
-    public static String sanitize(String input) {
+    public static String escapeXml(String input) {
         if (input == null) return "";
         return input.replace("&", "&amp;")
                     .replace("<", "&lt;")
@@ -39,8 +40,11 @@ public class ValidationUtil {
                     .trim();
     }
 
-    public static String escapeXml(String input) {
-        return sanitize(input);
+    /**
+     * Alias for escapeXml to maintain backward compatibility.
+     */
+    public static String sanitize(String input) {
+        return escapeXml(input);
     }
 
     public static int parsePositiveInt(String val, int defaultVal) {

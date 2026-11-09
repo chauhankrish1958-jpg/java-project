@@ -8,41 +8,43 @@ import static org.junit.jupiter.api.Assertions.*;
 public class XSSSanitizationTest {
 
     @Test
-    @DisplayName("Verify XSS sanitization neutralizes script tags")
+    @DisplayName("Verify JSP output escaping neutralizes script tags in HTML context")
     public void testScriptTagNeutralized() {
-        String input = "<script>alert('XSS Attack');</script>";
-        String sanitized = ValidationUtil.sanitize(input);
+        String rawInput = "<script>alert('XSS Attack');</script>";
+        String escaped = ValidationUtil.escapeXml(rawInput);
 
-        assertFalse(sanitized.contains("<"));
-        assertFalse(sanitized.contains(">"));
-        assertEquals("&lt;script&gt;alert(&#x27;XSS Attack&#x27;);&lt;/script&gt;", sanitized);
+        assertFalse(escaped.contains("<"));
+        assertFalse(escaped.contains(">"));
+        assertEquals("&lt;script&gt;alert(&#x27;XSS Attack&#x27;);&lt;/script&gt;", escaped);
     }
 
     @Test
     @DisplayName("Verify HTML attribute breakout payload is neutralized")
     public void testAttributeBreakoutNeutralized() {
-        String input = "\"><img src=x onerror=alert(1)>";
-        String sanitized = ValidationUtil.sanitize(input);
+        String rawInput = "\"><img src=x onerror=alert(1)>";
+        String escaped = ValidationUtil.escapeXml(rawInput);
 
-        assertFalse(sanitized.contains("\""));
-        assertFalse(sanitized.contains("<"));
-        assertTrue(sanitized.contains("&quot;&gt;&lt;img"));
+        assertFalse(escaped.contains("\""));
+        assertFalse(escaped.contains("<"));
+        assertTrue(escaped.contains("&quot;&gt;&lt;img"));
     }
 
     @Test
-    @DisplayName("Verify escapeXml alias produces identical safe output")
-    public void testEscapeXmlAlias() {
-        String input = "<b>Bold & \"Quoted\" 'Values'</b>";
-        String escaped = ValidationUtil.escapeXml(input);
+    @DisplayName("Verify JSP output escaping handles real-world business names like 'R&D Team' without double-escaping")
+    public void testOutputEscapingSingleEncoding() {
+        String businessTitle = "R&D Team & Q&A \"Beta\"";
+        String escaped = ValidationUtil.escapeXml(businessTitle);
 
-        assertEquals("&lt;b&gt;Bold &amp; &quot;Quoted&quot; &#x27;Values&#x27;&lt;/b&gt;", escaped);
+        // Single entity encoding
+        assertEquals("R&amp;D Team &amp; Q&amp;A &quot;Beta&quot;", escaped);
+        assertFalse(escaped.contains("&amp;amp;"), "Must not suffer from double escaping");
     }
 
     @Test
     @DisplayName("Verify null and empty inputs are handled cleanly without NullPointerException")
     public void testNullAndEmptyInputs() {
-        assertEquals("", ValidationUtil.sanitize(null));
-        assertEquals("", ValidationUtil.sanitize("   "));
         assertEquals("", ValidationUtil.escapeXml(null));
+        assertEquals("", ValidationUtil.escapeXml("   "));
+        assertEquals("", ValidationUtil.sanitize(null));
     }
 }

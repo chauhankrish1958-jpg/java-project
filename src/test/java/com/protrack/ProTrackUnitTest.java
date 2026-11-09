@@ -96,9 +96,9 @@ public class ProTrackUnitTest {
         assertTrue(ValidationUtil.isStrongPassword("12345678"));
         assertFalse(ValidationUtil.isStrongPassword("1234567"));
 
-        // XSS sanitization
+        // Output escaping for XSS defense
         String dangerous = "<script>alert('xss');</script>";
-        String safe = ValidationUtil.sanitize(dangerous);
+        String safe = ValidationUtil.escapeXml(dangerous);
         assertFalse(safe.contains("<script>"));
         assertTrue(safe.contains("&lt;script&gt;"));
     }

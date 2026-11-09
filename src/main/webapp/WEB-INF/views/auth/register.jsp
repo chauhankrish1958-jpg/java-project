@@ -38,7 +38,7 @@
         <% if (reqError != null && !reqError.trim().isEmpty()) { %>
         <div class="alert alert-danger alert-dismissible fade show small d-flex align-items-center mb-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div><%= com.protrack.util.ValidationUtil.sanitize(reqError) %></div>
+            <div><%= com.protrack.util.ValidationUtil.escapeXml(reqError) %></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <% } %>
@@ -51,7 +51,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
                         <input type="text" class="form-control" id="regFullName" name="fullName"
-                               value="<%= com.protrack.util.ValidationUtil.sanitize((String) request.getAttribute("fullName")) %>"
+                               value="<%= com.protrack.util.ValidationUtil.escapeXml((String) request.getAttribute("fullName")) %>"
                                placeholder="e.g. John Doe" required autofocus>
                     </div>
                 </div>
@@ -61,7 +61,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
                         <input type="email" class="form-control" id="regEmail" name="email"
-                               value="<%= com.protrack.util.ValidationUtil.sanitize((String) request.getAttribute("email")) %>"
+                               value="<%= com.protrack.util.ValidationUtil.escapeXml((String) request.getAttribute("email")) %>"
                                placeholder="john@example.com" required>
                     </div>
                 </div>

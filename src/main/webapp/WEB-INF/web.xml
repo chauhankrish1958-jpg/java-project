@@ -18,6 +18,8 @@
         <session-timeout>30</session-timeout>
         <cookie-config>
             <http-only>true</http-only>
+            <!-- Set to true when terminating TLS/HTTPS in production -->
+            <secure>false</secure>
             <name>PROTRACK_SESSION</name>
         </cookie-config>
         <tracking-mode>COOKIE</tracking-mode>

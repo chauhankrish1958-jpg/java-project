@@ -30,7 +30,7 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String fullName = com.protrack.util.ValidationUtil.sanitize(request.getParameter("fullName"));
+        String fullName = request.getParameter("fullName") != null ? request.getParameter("fullName").trim() : "";
         String email = request.getParameter("email") != null ? request.getParameter("email").trim().toLowerCase() : "";
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");

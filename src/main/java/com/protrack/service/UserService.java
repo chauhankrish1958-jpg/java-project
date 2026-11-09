@@ -51,9 +51,12 @@ public class UserService {
     }
 
     public User createUser(String fullName, String email, String password, Role role, String status, Integer actorUserId) throws AppException {
-        String cleanFullName = ValidationUtil.sanitize(fullName);
-        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
+        if (!ValidationUtil.isNotEmpty(fullName)) {
             throw new AppException("Full name is required.");
+        }
+        String trimmedName = fullName.trim();
+        if (trimmedName.length() < 2 || trimmedName.length() > 100) {
+            throw new AppException("Full name must be between 2 and 100 characters.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
             throw new AppException("Please provide a valid email address.");
@@ -69,7 +72,7 @@ public class UserService {
         String userStatus = ValidationUtil.isNotEmpty(status) ? status.toUpperCase() : "ACTIVE";
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
-        User user = UserFactory.createUser(0, cleanFullName, email.trim().toLowerCase(), hashedPassword, assignedRole, userStatus);
+        User user = UserFactory.createUser(0, trimmedName, email.trim().toLowerCase(), hashedPassword, assignedRole, userStatus);
         User saved = userDAO.save(user);
 
         activityDAO.log(actorUserId, "USER_CREATE", "Created user " + saved.getFullName() + " (" + saved.getEmail() + ") with role " + assignedRole.name(), "USER", saved.getId());
@@ -79,9 +82,12 @@ public class UserService {
     public void updateUser(int userId, String fullName, String email, Role role, String status, Integer actorUserId) throws AppException {
         User existing = getUserById(userId);
 
-        String cleanFullName = ValidationUtil.sanitize(fullName);
-        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
+        if (!ValidationUtil.isNotEmpty(fullName)) {
             throw new AppException("Full name is required.");
+        }
+        String trimmedName = fullName.trim();
+        if (trimmedName.length() < 2 || trimmedName.length() > 100) {
+            throw new AppException("Full name must be between 2 and 100 characters.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
             throw new AppException("Please provide a valid email address.");
@@ -90,7 +96,7 @@ public class UserService {
             throw new AppException("Another user is already registered with this email address.");
         }
 
-        existing.setFullName(cleanFullName);
+        existing.setFullName(trimmedName);
         existing.setEmail(email.trim().toLowerCase());
         if (role != null) {
             existing.setRole(role);
@@ -110,9 +116,12 @@ public class UserService {
     public void updateProfile(int userId, String fullName, String email) throws AppException {
         User existing = getUserById(userId);
 
-        String cleanFullName = ValidationUtil.sanitize(fullName);
-        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
+        if (!ValidationUtil.isNotEmpty(fullName)) {
             throw new AppException("Full name is required.");
+        }
+        String trimmedName = fullName.trim();
+        if (trimmedName.length() < 2 || trimmedName.length() > 100) {
+            throw new AppException("Full name must be between 2 and 100 characters.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
             throw new AppException("Please provide a valid email address.");
@@ -121,7 +130,7 @@ public class UserService {
             throw new AppException("Another user is already registered with this email address.");
         }
 
-        existing.setFullName(cleanFullName);
+        existing.setFullName(trimmedName);
         existing.setEmail(email.trim().toLowerCase());
 
         boolean updated = userDAO.update(existing);

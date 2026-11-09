@@ -54,11 +54,15 @@ public class ProjectService {
 
     public Project createProject(String title, String description, Date startDate, Date endDate,
                                  int managerId, String status, List<Integer> memberIds, Integer actorUserId) throws AppException {
-        String cleanTitle = ValidationUtil.sanitize(title);
-        String cleanDesc = ValidationUtil.sanitize(description);
-        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
+        if (!ValidationUtil.isNotEmpty(title)) {
             throw new AppException("Project title is required.");
         }
+        String trimmedTitle = title.trim();
+        if (trimmedTitle.length() < 2 || trimmedTitle.length() > 150) {
+            throw new AppException("Project title must be between 2 and 150 characters.");
+        }
+        String trimmedDesc = description != null ? description.trim() : "";
+
         if (startDate == null || endDate == null) {
             throw new AppException("Start date and end date are required.");
         }
@@ -70,7 +74,7 @@ public class ProjectService {
         }
 
         String projectStatus = ValidationUtil.isNotEmpty(status) ? status.toUpperCase() : "PLANNING";
-        Project project = new Project(0, cleanTitle, cleanDesc, startDate, endDate, managerId, projectStatus);
+        Project project = new Project(0, trimmedTitle, trimmedDesc, startDate, endDate, managerId, projectStatus);
 
         Project saved;
         if (memberIds != null && !memberIds.isEmpty()) {
@@ -87,11 +91,15 @@ public class ProjectService {
                               int managerId, String status, Integer actorUserId) throws AppException {
         Project existing = getProjectById(projectId);
 
-        String cleanTitle = ValidationUtil.sanitize(title);
-        String cleanDesc = ValidationUtil.sanitize(description);
-        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
+        if (!ValidationUtil.isNotEmpty(title)) {
             throw new AppException("Project title is required.");
         }
+        String trimmedTitle = title.trim();
+        if (trimmedTitle.length() < 2 || trimmedTitle.length() > 150) {
+            throw new AppException("Project title must be between 2 and 150 characters.");
+        }
+        String trimmedDesc = description != null ? description.trim() : "";
+
         if (startDate == null || endDate == null) {
             throw new AppException("Start date and end date are required.");
         }
@@ -102,8 +110,8 @@ public class ProjectService {
             throw new AppException("A valid project manager must be assigned.");
         }
 
-        existing.setTitle(cleanTitle);
-        existing.setDescription(cleanDesc);
+        existing.setTitle(trimmedTitle);
+        existing.setDescription(trimmedDesc);
         existing.setStartDate(startDate);
         existing.setEndDate(endDate);
         existing.setManagerId(managerId);

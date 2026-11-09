@@ -75,9 +75,12 @@ public class AuthService {
             throw new AppException("Public registration is currently disabled by administrator.");
         }
 
-        String cleanFullName = ValidationUtil.sanitize(fullName);
-        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
+        if (!ValidationUtil.isNotEmpty(fullName)) {
             throw new AppException("Full name is required.");
+        }
+        String trimmedName = fullName.trim();
+        if (trimmedName.length() < 2 || trimmedName.length() > 100) {
+            throw new AppException("Full name must be between 2 and 100 characters.");
         }
 
         if (!ValidationUtil.isValidEmail(email)) {
@@ -95,7 +98,7 @@ public class AuthService {
         Role assignedRole = (role != null) ? role : Role.TEAM_MEMBER;
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
-        User user = UserFactory.createUser(0, cleanFullName, email.trim().toLowerCase(), hashedPassword, assignedRole, "ACTIVE");
+        User user = UserFactory.createUser(0, trimmedName, email.trim().toLowerCase(), hashedPassword, assignedRole, "ACTIVE");
         User savedUser = userDAO.save(user);
 
         activityDAO.log(savedUser.getId(), "USER_REGISTER", "New user registered: " + savedUser.getFullName() + " (" + assignedRole.getDisplayName() + ")", "USER", savedUser.getId());
