@@ -13,6 +13,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.protrack.dao.ProjectDAO;
+import com.protrack.dao.UserDAO;
+import com.protrack.model.TaskPriority;
+
+import java.sql.Date;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,13 +27,17 @@ public class TaskAuthorizationTest {
 
     private TaskDAO mockTaskDAO;
     private ActivityDAO mockActivityDAO;
+    private UserDAO mockUserDAO;
+    private ProjectDAO mockProjectDAO;
     private TaskService taskService;
 
     @BeforeEach
     public void setup() {
         mockTaskDAO = mock(TaskDAO.class);
         mockActivityDAO = mock(ActivityDAO.class);
-        taskService = new TaskService(mockTaskDAO, mockActivityDAO);
+        mockUserDAO = mock(UserDAO.class);
+        mockProjectDAO = mock(ProjectDAO.class);
+        taskService = new TaskService(mockTaskDAO, mockActivityDAO, mockUserDAO, mockProjectDAO);
     }
 
     @Test
@@ -114,5 +123,89 @@ public class TaskAuthorizationTest {
         });
 
         verify(mockTaskDAO).updateStatus(103, TaskStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("Verify createTask fails when assignee does not exist")
+    public void testAssigneeMustExist() {
+        when(mockUserDAO.findById(999)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            taskService.createTask("API Auth", "Description", 1, 999,
+                    TaskPriority.MEDIUM, TaskStatus.TODO,
+                    Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+        });
+
+        assertTrue(ex.getMessage().contains("Assigned user does not exist"));
+        verify(mockTaskDAO, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Verify createTask fails when assignee is INACTIVE")
+    public void testAssigneeMustBeActive() {
+        User inactiveMember = UserFactory.createUser(20, "Inactive Bob", "bob@protrack.com", "hash", Role.TEAM_MEMBER, "INACTIVE");
+        when(mockUserDAO.findById(20)).thenReturn(Optional.of(inactiveMember));
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            taskService.createTask("API Auth", "Description", 1, 20,
+                    TaskPriority.MEDIUM, TaskStatus.TODO,
+                    Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+        });
+
+        assertTrue(ex.getMessage().contains("inactive user"));
+        verify(mockTaskDAO, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Verify createTask fails when assignee does not have TEAM_MEMBER role")
+    public void testAssigneeMustBeTeamMemberRole() {
+        User manager = UserFactory.createUser(30, "PM Sara", "sara@protrack.com", "hash", Role.PROJECT_MANAGER, "ACTIVE");
+        when(mockUserDAO.findById(30)).thenReturn(Optional.of(manager));
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            taskService.createTask("API Auth", "Description", 1, 30,
+                    TaskPriority.MEDIUM, TaskStatus.TODO,
+                    Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+        });
+
+        assertTrue(ex.getMessage().contains("Team Member role"));
+        verify(mockTaskDAO, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Verify createTask fails when assignee is not assigned to the project")
+    public void testAssigneeMustBeProjectMember() {
+        User member = UserFactory.createUser(40, "Dev Tim", "tim@protrack.com", "hash", Role.TEAM_MEMBER, "ACTIVE");
+        when(mockUserDAO.findById(40)).thenReturn(Optional.of(member));
+        when(mockProjectDAO.isMemberAssigned(1, 40)).thenReturn(false);
+
+        AppException ex = assertThrows(AppException.class, () -> {
+            taskService.createTask("API Auth", "Description", 1, 40,
+                    TaskPriority.MEDIUM, TaskStatus.TODO,
+                    Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+        });
+
+        assertTrue(ex.getMessage().contains("not a member of this project"));
+        verify(mockTaskDAO, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Verify createTask succeeds with valid active team member assigned to project")
+    public void testValidAssigneeSucceeds() throws AppException {
+        User member = UserFactory.createUser(50, "Dev Lisa", "lisa@protrack.com", "hash", Role.TEAM_MEMBER, "ACTIVE");
+        when(mockUserDAO.findById(50)).thenReturn(Optional.of(member));
+        when(mockProjectDAO.isMemberAssigned(1, 50)).thenReturn(true);
+
+        Task saved = new Task(10, "API Auth", "Desc", 1, 50, TaskPriority.MEDIUM, TaskStatus.TODO,
+                Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+        when(mockTaskDAO.save(any(Task.class))).thenReturn(saved);
+
+        Task result = taskService.createTask("API Auth", "Desc", 1, 50,
+                TaskPriority.MEDIUM, TaskStatus.TODO,
+                Date.valueOf("2026-11-01"), Date.valueOf("2026-11-15"), 1);
+
+        assertNotNull(result);
+        assertEquals(50, result.getAssignedTo());
+        verify(mockTaskDAO).save(any(Task.class));
     }
 }

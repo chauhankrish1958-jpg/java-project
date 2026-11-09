@@ -1,5 +1,7 @@
 package com.protrack.filter;
 
+import com.protrack.dao.UserDAO;
+import com.protrack.dao.impl.UserDAOImpl;
 import com.protrack.model.Role;
 import com.protrack.model.User;
 import jakarta.servlet.Filter;
@@ -14,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Authentication and Role-Based Access Control (RBAC) Filter.
@@ -21,6 +24,16 @@ import java.io.IOException;
  */
 @WebFilter(filterName = "AuthenticationFilter", urlPatterns = "/*")
 public class AuthenticationFilter implements Filter {
+
+    private final UserDAO userDAO;
+
+    public AuthenticationFilter() {
+        this.userDAO = new UserDAOImpl();
+    }
+
+    public AuthenticationFilter(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {}
@@ -75,13 +88,31 @@ public class AuthenticationFilter implements Filter {
             return;
         }
 
-        // 3. User is logged in: prevent accessing login or register pages again
+        // 3. Stale session validation: reload user status & role from database every 30 seconds
+        Long lastValidation = (Long) session.getAttribute("lastUserValidationTime");
+        long now = System.currentTimeMillis();
+        if (lastValidation == null || (now - lastValidation) > 30_000L) {
+            Optional<User> freshUserOpt = userDAO.findById(currentUser.getId());
+            if (freshUserOpt.isEmpty() || !"ACTIVE".equalsIgnoreCase(freshUserOpt.get().getStatus())) {
+                session.invalidate();
+                HttpSession newSession = request.getSession(true);
+                newSession.setAttribute("flash_error", "Your session has expired or your account is no longer active. Please log in again.");
+                response.sendRedirect(contextPath + "/login");
+                return;
+            }
+            User freshUser = freshUserOpt.get();
+            session.setAttribute("currentUser", freshUser);
+            session.setAttribute("lastUserValidationTime", now);
+            currentUser = freshUser;
+        }
+
+        // 4. User is logged in: prevent accessing login or register pages again
         if (uri.equals("/login") || uri.equals("/register") || uri.equals("/") || uri.equals("/index.jsp")) {
             response.sendRedirect(contextPath + currentUser.getDashboardUrl());
             return;
         }
 
-        // 4. Validate CSRF token on protected state-changing POST requests
+        // 5. Validate CSRF token on protected state-changing POST requests
         if ("POST".equalsIgnoreCase(request.getMethod()) && !isPublicPath) {
             if (!com.protrack.util.CSRFTokenUtil.isValid(request)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);

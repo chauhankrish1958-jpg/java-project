@@ -32,7 +32,11 @@
                                     <span class="badge badge-custom <%= p.getStatusBadgeClass() %>"><%= p.getStatus() %></span>
                                     <span class="small text-muted"><i class="bi bi-calendar-event me-1"></i>Due <%= DateUtil.formatDisplayDate(p.getEndDate()) %></span>
                                 </div>
-                                <h5 class="fw-bold text-dark mb-2"><%= ValidationUtil.escapeXml(p.getTitle()) %></h5>
+                                <h5 class="fw-bold text-dark mb-2">
+                                    <a href="<%= request.getContextPath() %>/member/projects?action=view&id=<%= p.getId() %>" class="text-dark text-decoration-none">
+                                        <%= ValidationUtil.escapeXml(p.getTitle()) %>
+                                    </a>
+                                </h5>
                                 <p class="text-secondary small mb-3"><%= p.getDescription() != null ? ValidationUtil.escapeXml(p.getDescription()) : "No project description provided." %></p>
                             </div>
 
@@ -54,6 +58,12 @@
                                 </div>
                                 <div class="progress progress-custom">
                                     <div class="progress-bar" style="width: <%= p.getProgressPercentage() %>%;"></div>
+                                </div>
+
+                                <div class="mt-3 pt-2 text-end">
+                                    <a href="<%= request.getContextPath() %>/member/projects?action=view&id=<%= p.getId() %>" class="btn btn-sm btn-outline-custom">
+                                        <i class="bi bi-eye me-1"></i> View Details
+                                    </a>
                                 </div>
                             </div>
                         </div>

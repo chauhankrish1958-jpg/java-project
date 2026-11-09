@@ -160,4 +160,8 @@ public class ProjectService {
             activityDAO.log(actorUserId, "PROJECT_REMOVE_MEMBER", "Removed team member (ID: " + userId + ") from project \"" + project.getTitle() + "\"", "PROJECT", projectId);
         }
     }
+
+    public boolean isMemberAssigned(int projectId, int userId) {
+        return projectDAO.isMemberAssigned(projectId, userId);
+    }
 }

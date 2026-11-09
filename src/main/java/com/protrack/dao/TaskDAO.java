@@ -19,6 +19,8 @@ public interface TaskDAO extends GenericDAO<Task, Integer> {
 
     List<Task> searchTasks(String query, Integer projectId, Integer assignedTo, TaskStatus status, TaskPriority priority);
 
+    List<Task> searchTasks(String query, Integer projectId, Integer assignedTo, TaskStatus status, TaskPriority priority, Integer managerId);
+
     boolean updateStatus(int taskId, TaskStatus newStatus);
 
     boolean updatePriority(int taskId, TaskPriority newPriority);

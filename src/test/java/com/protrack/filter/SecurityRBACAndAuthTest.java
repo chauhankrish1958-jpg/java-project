@@ -12,16 +12,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import com.protrack.dao.UserDAO;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class SecurityRBACAndAuthTest {
 
     private AuthenticationFilter filter;
+    private UserDAO mockUserDAO;
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession session;
@@ -31,7 +35,8 @@ public class SecurityRBACAndAuthTest {
 
     @BeforeEach
     public void setup() {
-        filter = new AuthenticationFilter();
+        mockUserDAO = mock(UserDAO.class);
+        filter = new AuthenticationFilter(mockUserDAO);
         request = mock(HttpServletRequest.class);
         response = mock(HttpServletResponse.class);
         session = mock(HttpSession.class);
@@ -43,6 +48,11 @@ public class SecurityRBACAndAuthTest {
         when(request.getSession(true)).thenReturn(session);
         when(request.getMethod()).thenReturn("GET");
         when(request.getRequestDispatcher(anyString())).thenReturn(dispatcher);
+
+        when(mockUserDAO.findById(anyInt())).thenAnswer(inv -> {
+            User u = (User) session.getAttribute("currentUser");
+            return Optional.ofNullable(u);
+        });
     }
 
     @Test
@@ -139,6 +149,50 @@ public class SecurityRBACAndAuthTest {
 
         filter.doFilter(request, response, chain);
 
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+        verify(dispatcher).forward(request, response);
+        verify(chain, never()).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("Verify stale session: deactivated user has session invalidated and redirected to /login")
+    public void testStaleSessionDeactivatedUserInvalidated() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn("/member/tasks");
+        User cachedUser = UserFactory.createUser(10, "Dev", "dev@protrack.com", "hash", Role.TEAM_MEMBER, "ACTIVE");
+        when(session.getAttribute("currentUser")).thenReturn(cachedUser);
+
+        // Database now has the user marked as INACTIVE
+        User deactivated = UserFactory.createUser(10, "Dev", "dev@protrack.com", "hash", Role.TEAM_MEMBER, "INACTIVE");
+        when(mockUserDAO.findById(10)).thenReturn(Optional.of(deactivated));
+
+        HttpSession freshSession = mock(HttpSession.class);
+        when(request.getSession(true)).thenReturn(freshSession);
+
+        filter.doFilter(request, response, chain);
+
+        verify(session).invalidate();
+        verify(freshSession).setAttribute(eq("flash_error"), contains("no longer active"));
+        verify(response).sendRedirect("/protrack/login");
+        verify(chain, never()).doFilter(request, response);
+    }
+
+    @Test
+    @DisplayName("Verify stale session: user demoted from ADMIN to TEAM_MEMBER has role refreshed and blocked from /admin")
+    public void testUserRoleDemotedRefreshesRoleAndBlocksAdminAccess() throws IOException, ServletException {
+        when(request.getServletPath()).thenReturn("/admin/settings");
+        // Cached in session as ADMIN:
+        User cachedAdmin = UserFactory.createUser(5, "FormerAdmin", "fa@protrack.com", "hash", Role.ADMIN, "ACTIVE");
+        when(session.getAttribute("currentUser")).thenReturn(cachedAdmin);
+
+        // In database, role was changed to TEAM_MEMBER:
+        User freshMember = UserFactory.createUser(5, "FormerAdmin", "fa@protrack.com", "hash", Role.TEAM_MEMBER, "ACTIVE");
+        when(mockUserDAO.findById(5)).thenReturn(Optional.of(freshMember));
+
+        filter.doFilter(request, response, chain);
+
+        // Session updated with fresh user
+        verify(session).setAttribute("currentUser", freshMember);
+        // And since fresh role is TEAM_MEMBER, access to /admin/settings is rejected with 403
         verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         verify(dispatcher).forward(request, response);
         verify(chain, never()).doFilter(request, response);

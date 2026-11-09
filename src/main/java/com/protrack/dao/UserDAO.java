@@ -20,5 +20,8 @@ public interface UserDAO extends GenericDAO<User, Integer> {
 
     int countUsers();
 
+    int countActiveByRole(Role role);
+
     boolean emailExists(String email, Integer excludeUserId);
 }
+

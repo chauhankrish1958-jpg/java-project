@@ -1,14 +1,20 @@
 package com.protrack.service;
 
 import com.protrack.dao.ActivityDAO;
+import com.protrack.dao.ProjectDAO;
 import com.protrack.dao.TaskDAO;
+import com.protrack.dao.UserDAO;
 import com.protrack.dao.impl.ActivityDAOImpl;
+import com.protrack.dao.impl.ProjectDAOImpl;
 import com.protrack.dao.impl.TaskDAOImpl;
+import com.protrack.dao.impl.UserDAOImpl;
 import com.protrack.exception.AppException;
 import com.protrack.exception.TaskAssignmentException;
+import com.protrack.model.Role;
 import com.protrack.model.Task;
 import com.protrack.model.TaskPriority;
 import com.protrack.model.TaskStatus;
+import com.protrack.model.User;
 import com.protrack.util.ValidationUtil;
 
 import java.sql.Date;
@@ -21,15 +27,25 @@ public class TaskService {
 
     private final TaskDAO taskDAO;
     private final ActivityDAO activityDAO;
+    private final UserDAO userDAO;
+    private final ProjectDAO projectDAO;
 
     public TaskService() {
         this.taskDAO = new TaskDAOImpl();
         this.activityDAO = new ActivityDAOImpl();
+        this.userDAO = new UserDAOImpl();
+        this.projectDAO = new ProjectDAOImpl();
     }
 
     public TaskService(TaskDAO taskDAO, ActivityDAO activityDAO) {
+        this(taskDAO, activityDAO, new UserDAOImpl(), new ProjectDAOImpl());
+    }
+
+    public TaskService(TaskDAO taskDAO, ActivityDAO activityDAO, UserDAO userDAO, ProjectDAO projectDAO) {
         this.taskDAO = taskDAO;
         this.activityDAO = activityDAO;
+        this.userDAO = userDAO;
+        this.projectDAO = projectDAO;
     }
 
     public List<Task> getAllTasks() {
@@ -57,6 +73,26 @@ public class TaskService {
         return taskDAO.searchTasks(query, projectId, assignedTo, status, priority);
     }
 
+    public List<Task> searchTasks(String query, Integer projectId, Integer assignedTo, TaskStatus status, TaskPriority priority, Integer managerId) {
+        return taskDAO.searchTasks(query, projectId, assignedTo, status, priority, managerId);
+    }
+
+    private void validateAssignee(Integer assignedTo, int projectId) throws AppException {
+        if (assignedTo != null && assignedTo > 0) {
+            User assignee = userDAO.findById(assignedTo)
+                    .orElseThrow(() -> new AppException("Assigned user does not exist."));
+            if (!"ACTIVE".equalsIgnoreCase(assignee.getStatus())) {
+                throw new AppException("Cannot assign task to an inactive user.");
+            }
+            if (assignee.getRole() != Role.TEAM_MEMBER) {
+                throw new AppException("Tasks can only be assigned to users with the Team Member role.");
+            }
+            if (!projectDAO.isMemberAssigned(projectId, assignedTo)) {
+                throw new AppException("Cannot assign task to a user who is not a member of this project.");
+            }
+        }
+    }
+
     public Task createTask(String title, String description, int projectId, Integer assignedTo,
                            TaskPriority priority, TaskStatus status, Date startDate, Date dueDate, Integer creatorUserId) throws AppException {
         if (!ValidationUtil.isNotEmpty(title)) {
@@ -77,6 +113,8 @@ public class TaskService {
         if (startDate != null && dueDate.before(startDate)) {
             throw new AppException("Due date cannot be before start date.");
         }
+
+        validateAssignee(assignedTo, projectId);
 
         Task task = new Task(0, trimmedTitle, trimmedDesc, projectId, assignedTo,
                 priority != null ? priority : TaskPriority.MEDIUM,
@@ -108,6 +146,8 @@ public class TaskService {
         if (startDate != null && dueDate.before(startDate)) {
             throw new AppException("Due date cannot be before start date.");
         }
+
+        validateAssignee(assignedTo, projectId);
 
         existing.setTaskTitle(trimmedTitle);
         existing.setDescription(trimmedDesc);

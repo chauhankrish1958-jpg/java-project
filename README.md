@@ -47,7 +47,7 @@
 | **Visual Analytics** | Chart.js | Chart.js 4.4.1 (Doughnut & Bar charts) |
 | **Password & Token Security** | BCrypt & SecureRandom | OpenBSD Blowfish password hashing & cryptographic CSRF tokens |
 | **Build & Packaging Tool** | Apache Maven | Maven 3.9+ (Produces standard `protrack.war`) |
-| **Automated Testing** | JUnit 5 & Mockito | 28 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
+| **Automated Testing** | JUnit 5 & Mockito | 52 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
 
 ---
 
@@ -136,9 +136,12 @@ protrack/
 │   └── test/
 │       ├── java/com/protrack/
 │       │   ├── dao/ProjectDAORollbackTest.java     # Atomic transaction rollback tests
-│       │   ├── filter/SecurityRBACAndAuthTest.java # RBAC, matrix URL bypass & CSRF tests
-│       │   ├── service/TaskAuthorizationTest.java  # Task ownership & status update tests
+│       │   ├── filter/SecurityRBACAndAuthTest.java # RBAC, matrix URL bypass, CSRF & stale session tests
 │       │   ├── service/RegistrationSecurityTest.java # Role escalation & 8-char password tests
+│       │   ├── service/TaskAuthorizationTest.java  # Task ownership, assignee validation & status update tests
+│       │   ├── service/UserServiceProtectionTest.java # Admin self-protection & last admin safeguard tests
+│       │   ├── servlet/ProjectServletAuthorizationTest.java # Project ownership & member access tests
+│       │   ├── servlet/TaskServletAuthorizationTest.java    # Cross-project move & manager task scope tests
 │       │   ├── util/XSSSanitizationTest.java       # HTML/script injection neutralization tests
 │       │   └── ProTrackUnitTest.java               # Core unit tests (BCrypt, validation, enums)
 │       └── resources/
@@ -427,39 +430,43 @@ Execute the entire test suite using:
 ./mvnw test
 ```
 
-### Automated Test Suite Overview (28 Tests — 100% Passing):
+### Automated Test Suite Overview (52 Tests — 100% Passing):
 
 | Test Suite Class | Tests | Category | Key Assertions & Scenarios Verified |
 | :--- | :---: | :--- | :--- |
-| **`ProjectDAORollbackTest`** | 2 | Unit Test with Mocked JDBC | • Atomic rollback on batch failure: verifies `conn.rollback()` is invoked, auto-commit is restored, and `DatabaseOperationException` is thrown using mocked JDBC connection<br>• Clean commit on valid project and member batch insertion |
-| **`SecurityRBACAndAuthTest`** | 7 | Security & Filters | • Unauthenticated requests safely redirected to `/login`<br>• Semicolon matrix parameter auth bypass neutralized (`/manager/tasks;x=.css` denied)<br>• RBAC role mismatch returns HTTP 403 Forbidden<br>• Static asset whitelist (`/assets/*`) bypasses auth without risk<br>• Missing CSRF token on POST yields HTTP 403<br>• Invalid CSRF token on POST yields HTTP 403<br>• Valid session CSRF token on POST passes filter successfully |
-| **`TaskAuthorizationTest`** | 4 | Service & Auth | • Team members can update status on tasks assigned directly to their `userId`<br>• Team members denied with `UnauthorizedAccessException` when attempting to alter unassigned tasks<br>• Team members denied when attempting to alter other team members' tasks<br>• Administrators can update status of any task across all projects |
+| **`TaskServletAuthorizationTest`** | 5 | Servlet & Security | • Project Manager blocked from cross-project task move (target project ownership check)<br>• Project Manager blocked from editing tasks in unmanaged projects<br>• Manager `/manager/tasks` scoped to manager's projects at DAO level<br>• Manager searching unowned `projectId` returns empty list<br>• Administrator sees all tasks across all projects |
+| **`ProjectServletAuthorizationTest`** | 5 | Servlet & Ownership | • Project Manager viewing unmanaged project denied with HTTP 403 Forbidden (`403.jsp`)<br>• Project Manager viewing owned project succeeds (`manager/project-detail.jsp`)<br>• Administrator viewing any project workspace succeeds (`admin/project-detail.jsp`)<br>• Team Member viewing unassigned project denied with HTTP 403 Forbidden<br>• Team Member viewing assigned project succeeds and receives filtered list containing only their own tasks (`member/project-detail.jsp`) |
+| **`UserServiceProtectionTest`** | 7 | Service & RBAC Defense | • Administrator cannot change their own role away from `ADMIN`<br>• Administrator cannot deactivate their own account status<br>• Cannot demote the last remaining active administrator<br>• Cannot deactivate the last remaining active administrator<br>• Cannot delete the last remaining active administrator<br>• User self-deletion strictly rejected with clear error message<br>• Demoting an administrator succeeds when multiple active administrators exist |
+| **`TaskAuthorizationTest`** | 9 | Service & Assignee Security | • Team members can update status on tasks assigned directly to their `userId`<br>• Team members denied with `UnauthorizedAccessException` when attempting to alter unassigned tasks<br>• Team members denied when attempting to alter other team members' tasks<br>• Administrators can update status of any task across all projects<br>• Assignee validation: non-existent user rejected<br>• Assignee validation: inactive user rejected<br>• Assignee validation: user without `Role.TEAM_MEMBER` rejected<br>• Assignee validation: user not assigned to the task's project rejected<br>• Assignee validation: valid active project member succeeds |
+| **`SecurityRBACAndAuthTest`** | 9 | Security & Filters | • Unauthenticated requests safely redirected to `/login`<br>• Semicolon matrix parameter auth bypass neutralized (`/manager/tasks;x=.css` denied)<br>• RBAC role mismatch returns HTTP 403 Forbidden<br>• Static asset whitelist (`/assets/*`) bypasses auth without risk<br>• Missing CSRF token on POST yields HTTP 403<br>• Invalid CSRF token on POST yields HTTP 403<br>• Valid session CSRF token on POST passes filter successfully<br>• Stale session: deactivated user in DB has session invalidated and redirected to `/login`<br>• Stale session: role update in DB dynamically refreshes session role and updates RBAC enforcement |
 | **`RegistrationSecurityTest`** | 5 | Service & Validation | • Passwords shorter than 8 characters strictly rejected<br>• Raw special characters (e.g. & in 'R&D') preserved cleanly in storage without premature entity encoding<br>• Role escalation prevented: public registrations forced strictly to `Role.TEAM_MEMBER`<br>• Duplicate email registrations rejected with `AppException`<br>• Registration policy check rejects signups when registration is disabled in settings |
 | **`XSSSanitizationTest`** | 4 | Security Utilities | • JSP output escaping (`escapeXml`) neutralizes dangerous `<script>` and `javascript:` payloads<br>• Neutralizes HTML attribute breakout attacks (`"><img src=x onerror=...`)<br>• Converts `&`, `<`, `>`, `"`, `'` to safe XML entities once without double-escaping real-world names (e.g. `R&D Team` renders cleanly)<br>• Gracefully handles `null` and empty string inputs |
 | **`ProTrackUnitTest`** | 6 | Core Unit Tests | • BCrypt salt generation and password verification<br>• Rejection of passwords with insufficient length (< 8 chars)<br>• Email format regex validation<br>• Date calculations and overdue detection<br>• TaskStatus and Priority enum display mappings<br>• Polymorphic role capability checks on concrete `User` subtypes |
+| **`ProjectDAORollbackTest`** | 2 | Unit Test with Mocked JDBC | • Atomic rollback on batch failure: verifies `conn.rollback()` is invoked, auto-commit is restored, and `DatabaseOperationException` is thrown using mocked JDBC connection<br>• Clean commit on valid project and member batch insertion |
 
 ```
 [INFO] Results:
-[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
 ### Functional Verification Matrix:
 - [x] **Authentication & Session Fixation:** Login with valid credentials invokes `request.changeSessionId()` and redirects to role-specific dashboard.
+- [x] **Stale Session Invalidation & Role Refresh:** `AuthenticationFilter` re-evaluates user status and role against the database (~30s cache); deactivations immediately invalidate sessions and demotions enforce new roles.
 - [x] **CSRF Protection:** Per-session cryptographic token required on state-changing authenticated POST forms.
 - [x] **URL Matrix Parameter Defense:** Semicolon path parameters (`/manager/tasks;x=.css`) stripped and blocked from filter bypass.
+- [x] **Project Ownership on View:** `ProjectServlet` verifies that Project Managers can only view projects they manage; unauthorized access returns HTTP 403 (`403.jsp`).
+- [x] **Team Member Read-Only Workspace:** Team members accessing `/member/projects?action=view` view their assigned project details, assigned team, and only their own tasks via `member/project-detail.jsp`; unassigned members receive HTTP 403.
+- [x] **Task Move Ownership Protection:** TaskServlet verifies ownership of both current and target projects on task updates, preventing Project Managers from moving tasks into projects they do not manage.
+- [x] **Manager Task Scope Filtering:** `TaskServlet` and `TaskDAO.searchTasks` restrict manager task listings to projects owned by that manager at the database query level.
+- [x] **Task Assignee Membership & Status Validation:** `TaskService` validates that assigned users exist, are `ACTIVE`, hold `Role.TEAM_MEMBER`, and are mapped to the task's project in `project_members`.
+- [x] **Administrator Protection:** Admin accounts cannot demote their own role or deactivate themselves; the last remaining active administrator cannot be demoted, deactivated, or deleted.
 - [x] **Role Authorization:** Accessing `/admin/users` as a Team Member produces a 403 Forbidden page.
-- [x] **Task Ownership Enforcement:** Team members can only update status of their own assigned tasks.
 - [x] **Role Escalation Prevention:** Public registration form forced strictly to `Role.TEAM_MEMBER`.
 - [x] **Password Security:** BCrypt Blowfish hashing with 8-character minimum policy verified; plain-text passwords are never stored.
 - [x] **Zero H2 Fallback:** `DBConnection` strictly enforces MySQL with loud `SQLException` on failure.
-- [x] **Atomic Transactions:** Project batch persistence verified with automated rollback on failure.
-- [x] **User Management:** Admin can add, search, edit, and delete user accounts.
-- [x] **Project Management:** Project creation with manager assignment and member selection succeeds.
-- [x] **Live Calculations:** Project completion percentages recalculate dynamically upon task completion.
-- [x] **Deadline Alerts:** Overdue and Due Today tasks trigger warning badges.
-- [x] **Audit Trail:** Modifying a task or project creates an entry in `activity_logs`.
-- [x] **Context-Aware Output Escaping:** Dynamic JSP escaping via `ValidationUtil.escapeXml()` prevents XSS and avoids double-escaping raw text like "R&D".
+- [x] **Atomic Transactions:** Project batch persistence verified with automated rollback on failure (`ProjectDAORollbackTest`).
+- [x] **Context-Aware Output Escaping:** Dynamic JSP escaping via `ValidationUtil.escapeXml()` prevents XSS and avoids double-escaping raw text like "R&D" or "Q&A <test>".
 
 ---
 

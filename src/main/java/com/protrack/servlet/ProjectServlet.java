@@ -32,9 +32,21 @@ import java.util.List;
 })
 public class ProjectServlet extends HttpServlet {
 
-    private final ProjectService projectService = new ProjectService();
-    private final UserService userService = new UserService();
-    private final TaskService taskService = new TaskService();
+    private final ProjectService projectService;
+    private final UserService userService;
+    private final TaskService taskService;
+
+    public ProjectServlet() {
+        this.projectService = new ProjectService();
+        this.userService = new UserService();
+        this.taskService = new TaskService();
+    }
+
+    public ProjectServlet(ProjectService projectService, UserService userService, TaskService taskService) {
+        this.projectService = projectService;
+        this.userService = userService;
+        this.taskService = taskService;
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -55,6 +67,40 @@ public class ProjectServlet extends HttpServlet {
             int projectId = ValidationUtil.parsePositiveInt(request.getParameter("id"), 0);
             try {
                 Project project = projectService.getProjectById(projectId);
+
+                // Role-based project ownership and access verification
+                if (currentUser.getRole() == Role.PROJECT_MANAGER) {
+                    if (project.getManagerId() != currentUser.getId()) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        request.setAttribute("errorMessage", "Access Denied: You can only view projects that you manage.");
+                        request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
+                        return;
+                    }
+                } else if (currentUser.getRole() == Role.TEAM_MEMBER) {
+                    boolean isMember = projectService.isMemberAssigned(projectId, currentUser.getId());
+                    List<Task> allProjectTasks = taskService.getTasksByProject(projectId);
+                    boolean hasTask = allProjectTasks.stream()
+                            .anyMatch(t -> t.getAssignedTo() != null && t.getAssignedTo().equals(currentUser.getId()));
+
+                    if (!isMember && !hasTask) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        request.setAttribute("errorMessage", "Access Denied: You are not assigned to this project.");
+                        request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
+                        return;
+                    }
+
+                    List<User> members = projectService.getProjectMembers(projectId);
+                    List<Task> memberTasks = allProjectTasks.stream()
+                            .filter(t -> t.getAssignedTo() != null && t.getAssignedTo().equals(currentUser.getId()))
+                            .toList();
+
+                    request.setAttribute("project", project);
+                    request.setAttribute("members", members);
+                    request.setAttribute("tasks", memberTasks);
+                    request.getRequestDispatcher("/WEB-INF/views/member/project-detail.jsp").forward(request, response);
+                    return;
+                }
+
                 List<User> members = projectService.getProjectMembers(projectId);
                 List<Task> tasks = taskService.getTasksByProject(projectId);
                 List<User> allTeamMembers = userService.getUsersByRole(Role.TEAM_MEMBER);
@@ -67,10 +113,8 @@ public class ProjectServlet extends HttpServlet {
                 // View template depends on role
                 if (uri.contains("/admin/")) {
                     request.getRequestDispatcher("/WEB-INF/views/admin/project-detail.jsp").forward(request, response);
-                } else if (uri.contains("/manager/")) {
-                    request.getRequestDispatcher("/WEB-INF/views/manager/project-detail.jsp").forward(request, response);
                 } else {
-                    request.getRequestDispatcher("/WEB-INF/views/member/project-detail.jsp").forward(request, response);
+                    request.getRequestDispatcher("/WEB-INF/views/manager/project-detail.jsp").forward(request, response);
                 }
                 return;
             } catch (AppException e) {

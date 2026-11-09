@@ -176,6 +176,11 @@ public class TaskDAOImpl implements TaskDAO {
 
     @Override
     public List<Task> searchTasks(String query, Integer projectId, Integer assignedTo, TaskStatus status, TaskPriority priority) {
+        return searchTasks(query, projectId, assignedTo, status, priority, null);
+    }
+
+    @Override
+    public List<Task> searchTasks(String query, Integer projectId, Integer assignedTo, TaskStatus status, TaskPriority priority, Integer managerId) {
         List<Task> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
@@ -205,6 +210,11 @@ public class TaskDAOImpl implements TaskDAO {
         if (priority != null) {
             sql.append(" AND t.priority = ? ");
             params.add(priority.name());
+        }
+
+        if (managerId != null && managerId > 0) {
+            sql.append(" AND p.manager_id = ? ");
+            params.add(managerId);
         }
 
         sql.append(" ORDER BY t.due_date ASC");

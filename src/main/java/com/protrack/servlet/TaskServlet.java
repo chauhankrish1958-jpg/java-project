@@ -32,9 +32,21 @@ import java.util.List;
 })
 public class TaskServlet extends HttpServlet {
 
-    private final TaskService taskService = new TaskService();
-    private final ProjectService projectService = new ProjectService();
-    private final UserService userService = new UserService();
+    private final TaskService taskService;
+    private final ProjectService projectService;
+    private final UserService userService;
+
+    public TaskServlet() {
+        this.taskService = new TaskService();
+        this.projectService = new ProjectService();
+        this.userService = new UserService();
+    }
+
+    public TaskServlet(TaskService taskService, ProjectService projectService, UserService userService) {
+        this.taskService = taskService;
+        this.projectService = projectService;
+        this.userService = userService;
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -61,8 +73,26 @@ public class TaskServlet extends HttpServlet {
             TaskPriority priority = (priorityParam != null && !priorityParam.isEmpty() && !"ALL".equalsIgnoreCase(priorityParam))
                     ? TaskPriority.fromString(priorityParam) : null;
 
-            List<Task> tasks = taskService.searchTasks(query, projectId > 0 ? projectId : null,
-                    assignedTo > 0 ? assignedTo : null, status, priority);
+            List<Task> tasks;
+            if (currentUser.getRole() == Role.PROJECT_MANAGER) {
+                if (projectId > 0) {
+                    try {
+                        Project p = projectService.getProjectById(projectId);
+                        if (p.getManagerId() != currentUser.getId()) {
+                            tasks = java.util.Collections.emptyList();
+                        } else {
+                            tasks = taskService.searchTasks(query, projectId, assignedTo > 0 ? assignedTo : null, status, priority, currentUser.getId());
+                        }
+                    } catch (AppException e) {
+                        tasks = java.util.Collections.emptyList();
+                    }
+                } else {
+                    tasks = taskService.searchTasks(query, null, assignedTo > 0 ? assignedTo : null, status, priority, currentUser.getId());
+                }
+            } else {
+                tasks = taskService.searchTasks(query, projectId > 0 ? projectId : null,
+                        assignedTo > 0 ? assignedTo : null, status, priority, null);
+            }
 
             List<Project> managedProjects = (currentUser.getRole() == Role.ADMIN)
                     ? projectService.getAllProjects()
@@ -165,19 +195,24 @@ public class TaskServlet extends HttpServlet {
 
                     int taskId = ValidationUtil.parsePositiveInt(request.getParameter("taskId"), 0);
                     Task existing = taskService.getTaskById(taskId);
+                    int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
 
-                    // If Project Manager, verify project ownership
+                    // If Project Manager, verify project ownership of BOTH existing and new project
                     if (userRole == Role.PROJECT_MANAGER) {
-                        Project proj = projectService.getProjectById(existing.getProjectId());
-                        if (proj.getManagerId() != currentUser.getId()) {
+                        Project currentProj = projectService.getProjectById(existing.getProjectId());
+                        if (currentProj.getManagerId() != currentUser.getId()) {
                             throw new com.protrack.exception.UnauthorizedAccessException(
                                     "Access Denied: You can only edit tasks for projects assigned to you.");
+                        }
+                        Project targetProj = projectService.getProjectById(projectId);
+                        if (targetProj.getManagerId() != currentUser.getId()) {
+                            throw new com.protrack.exception.UnauthorizedAccessException(
+                                    "Access Denied: You cannot move a task to a project you do not manage.");
                         }
                     }
 
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
-                    int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
                     int assignedTo = ValidationUtil.parsePositiveInt(request.getParameter("assignedTo"), 0);
                     String priorityStr = request.getParameter("priority");
                     String statusStr = request.getParameter("status");

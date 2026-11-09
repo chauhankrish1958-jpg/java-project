@@ -223,6 +223,23 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
+    public int countActiveByRole(Role role) {
+        String sql = "SELECT COUNT(*) FROM users WHERE role = ? AND UPPER(status) = 'ACTIVE'";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, role != null ? role.name() : Role.ADMIN.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Failed to count active users by role: " + role, e);
+        }
+        return 0;
+    }
+
+    @Override
     public boolean emailExists(String email, Integer excludeUserId) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE LOWER(email) = ?");
         if (excludeUserId != null) {
