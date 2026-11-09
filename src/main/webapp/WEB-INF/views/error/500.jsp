@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isErrorPage="true" %>
 <%@ page import="com.protrack.model.User" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     User currentUser = (User) session.getAttribute("currentUser");
     String cp = request.getContextPath();
@@ -34,7 +35,7 @@
     </p>
     <% if (exception != null && exception.getMessage() != null) { %>
     <div class="alert alert-light border small text-start font-monospace mb-4 text-truncate">
-        <%= exception.getMessage() %>
+        <%= ValidationUtil.escapeXml(exception.getMessage()) %>
     </div>
     <% } %>
     <div>

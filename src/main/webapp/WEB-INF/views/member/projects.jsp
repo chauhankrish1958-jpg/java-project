@@ -2,6 +2,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="com.protrack.model.Project" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "My Assigned Projects");
     request.setAttribute("pageSubtitle", "View projects you are actively contributing to and review timelines");
@@ -31,18 +32,18 @@
                                     <span class="badge badge-custom <%= p.getStatusBadgeClass() %>"><%= p.getStatus() %></span>
                                     <span class="small text-muted"><i class="bi bi-calendar-event me-1"></i>Due <%= DateUtil.formatDisplayDate(p.getEndDate()) %></span>
                                 </div>
-                                <h5 class="fw-bold text-dark mb-2"><%= p.getTitle() %></h5>
-                                <p class="text-secondary small mb-3"><%= p.getDescription() != null ? p.getDescription() : "No project description provided." %></p>
+                                <h5 class="fw-bold text-dark mb-2"><%= ValidationUtil.escapeXml(p.getTitle()) %></h5>
+                                <p class="text-secondary small mb-3"><%= p.getDescription() != null ? ValidationUtil.escapeXml(p.getDescription()) : "No project description provided." %></p>
                             </div>
 
                             <div class="pt-3 border-top">
                                 <div class="d-flex align-items-center mb-3">
                                     <div class="rounded-circle bg-light border text-primary fw-bold d-flex align-items-center justify-content-center me-2"
                                          style="width: 32px; height: 32px; font-size: 0.8rem;">
-                                        <%= p.getManagerName() != null && !p.getManagerName().isEmpty() ? p.getManagerName().substring(0, 1).toUpperCase() : "M" %>
+                                        <%= p.getManagerName() != null && !p.getManagerName().isEmpty() ? ValidationUtil.escapeXml(p.getManagerName().substring(0, 1).toUpperCase()) : "M" %>
                                     </div>
                                     <div class="small">
-                                        <div class="fw-semibold text-dark"><%= p.getManagerName() != null ? p.getManagerName() : "Unassigned" %></div>
+                                        <div class="fw-semibold text-dark"><%= p.getManagerName() != null ? ValidationUtil.escapeXml(p.getManagerName()) : "Unassigned" %></div>
                                         <div class="text-muted">Project Manager</div>
                                     </div>
                                 </div>

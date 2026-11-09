@@ -4,6 +4,7 @@
 <%@ page import="com.protrack.model.Task" %>
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "Project Manager Dashboard");
     request.setAttribute("pageSubtitle", "Monitor sprint velocity, oversee team deliveries, and track task progression");
@@ -148,10 +149,10 @@
                                 </div>
                                 <h5 class="fw-bold text-dark mb-2">
                                     <a href="<%= request.getContextPath() %>/manager/projects?action=view&id=<%= p.getId() %>" class="text-dark text-decoration-none">
-                                        <%= p.getTitle() %>
+                                        <%= ValidationUtil.escapeXml(p.getTitle()) %>
                                     </a>
                                 </h5>
-                                <p class="text-secondary small text-truncate" style="max-height: 40px;"><%= p.getDescription() != null ? p.getDescription() : "No description provided." %></p>
+                                <p class="text-secondary small text-truncate" style="max-height: 40px;"><%= p.getDescription() != null ? ValidationUtil.escapeXml(p.getDescription()) : "No description provided." %></p>
                             </div>
                             <div class="pt-3 border-top mt-3">
                                 <div class="d-flex justify-content-between align-items-center small mb-1">
@@ -206,14 +207,14 @@
                             for (Task t : recentTasks) { %>
                             <tr>
                                 <td>
-                                    <div class="fw-semibold text-dark"><%= t.getTaskTitle() %></div>
-                                    <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? t.getDescription() : "" %></div>
+                                    <div class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(t.getTaskTitle()) %></div>
+                                    <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? ValidationUtil.escapeXml(t.getDescription()) : "" %></div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border"><%= t.getProjectName() %></span>
+                                    <span class="badge bg-light text-dark border"><%= ValidationUtil.escapeXml(t.getProjectName()) %></span>
                                 </td>
                                 <td>
-                                    <span class="small fw-medium"><%= t.getAssignedToName() != null ? t.getAssignedToName() : "Unassigned" %></span>
+                                    <span class="small fw-medium"><%= t.getAssignedToName() != null ? ValidationUtil.escapeXml(t.getAssignedToName()) : "Unassigned" %></span>
                                 </td>
                                 <td>
                                     <span class="badge badge-custom <%= t.getPriority().getBadgeClass() %>">

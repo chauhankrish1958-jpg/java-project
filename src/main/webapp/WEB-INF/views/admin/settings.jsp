@@ -2,6 +2,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.protrack.model.SystemSetting" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "System Settings");
     request.setAttribute("pageSubtitle", "Configure application preferences, registration policies and announcement banners");
@@ -40,15 +41,16 @@
                     </div>
                     <div class="protrack-card-body p-4">
                         <form action="<%= request.getContextPath() %>/admin/settings" method="POST">
+                            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label for="appName" class="form-label">Application Branding Name</label>
-                                    <input type="text" class="form-control" id="appName" name="app_name" value="<%= appName %>" required>
+                                    <input type="text" class="form-control" id="appName" name="app_name" value="<%= ValidationUtil.escapeXml(appName) %>" required>
                                     <div class="form-text small text-muted">Appears in header, browser titles, and emails.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="companyName" class="form-label">Organization / Institution Name</label>
-                                    <input type="text" class="form-control" id="companyName" name="company_name" value="<%= companyName %>" required>
+                                    <input type="text" class="form-control" id="companyName" name="company_name" value="<%= ValidationUtil.escapeXml(companyName) %>" required>
                                     <div class="form-text small text-muted">Host organization name.</div>
                                 </div>
                             </div>
@@ -56,7 +58,7 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label for="dueDays" class="form-label">Default Task Duration (Days)</label>
-                                    <input type="number" class="form-control" id="dueDays" name="task_default_due_days" value="<%= dueDays %>" min="1" max="365" required>
+                                    <input type="number" class="form-control" id="dueDays" name="task_default_due_days" value="<%= ValidationUtil.escapeXml(dueDays) %>" min="1" max="365" required>
                                     <div class="form-text small text-muted">Default days added to start date when planning tasks.</div>
                                 </div>
                                 <div class="col-md-6">
@@ -71,7 +73,7 @@
 
                             <div class="mb-4">
                                 <label for="banner" class="form-label">Global Notification / Announcement Banner</label>
-                                <textarea class="form-control" id="banner" name="notification_banner" rows="2" placeholder="e.g. Scheduled maintenance this Saturday at 10 PM UTC"><%= banner %></textarea>
+                                <textarea class="form-control" id="banner" name="notification_banner" rows="2" placeholder="e.g. Scheduled maintenance this Saturday at 10 PM UTC"><%= ValidationUtil.escapeXml(banner) %></textarea>
                                 <div class="form-text small text-muted">Broadcasted in the top navigation bar across all logged-in user dashboards.</div>
                             </div>
 
@@ -108,9 +110,9 @@
                                     <% if (settingsList != null) {
                                         for (SystemSetting s : settingsList) { %>
                                         <tr>
-                                            <td class="font-monospace small text-primary"><%= s.getSettingKey() %></td>
-                                            <td class="small text-truncate" style="max-width: 160px;" title="<%= s.getSettingValue() %>">
-                                                <%= s.getSettingValue() %>
+                                            <td class="font-monospace small text-primary"><%= ValidationUtil.escapeXml(s.getSettingKey()) %></td>
+                                            <td class="small text-truncate" style="max-width: 160px;" title="<%= ValidationUtil.escapeXml(s.getSettingValue()) %>">
+                                                <%= ValidationUtil.escapeXml(s.getSettingValue()) %>
                                             </td>
                                         </tr>
                                     <%  }

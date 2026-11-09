@@ -18,7 +18,7 @@ public class ValidationUtil {
 
     public static boolean isStrongPassword(String password) {
         if (password == null) return false;
-        return password.trim().length() >= 6;
+        return password.trim().length() >= 8;
     }
 
     public static boolean isNotEmpty(String value) {
@@ -26,7 +26,8 @@ public class ValidationUtil {
     }
 
     /**
-     * Basic XSS sanitization by escaping HTML entities.
+     * Cross-Site Scripting (XSS) sanitization and HTML escaping.
+     * Replaces HTML control characters with safe XML/HTML entities.
      */
     public static String sanitize(String input) {
         if (input == null) return "";
@@ -36,6 +37,10 @@ public class ValidationUtil {
                     .replace("\"", "&quot;")
                     .replace("'", "&#x27;")
                     .trim();
+    }
+
+    public static String escapeXml(String input) {
+        return sanitize(input);
     }
 
     public static int parsePositiveInt(String val, int defaultVal) {

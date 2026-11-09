@@ -36,8 +36,10 @@ public class LoginServlet extends HttpServlet {
         try {
             User user = authService.authenticate(email, password);
 
-            // Create or renew session
+            // Create session and protect against session fixation attacks
             HttpSession session = request.getSession(true);
+            request.changeSessionId(); // Regenerates session ID to prevent session fixation (Servlet 3.1+)
+            com.protrack.util.CSRFTokenUtil.getToken(session); // Generate unique session CSRF token
             session.setAttribute("currentUser", user);
             session.setMaxInactiveInterval(30 * 60); // 30 minutes session timeout
 

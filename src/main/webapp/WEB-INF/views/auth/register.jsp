@@ -38,19 +38,20 @@
         <% if (reqError != null && !reqError.trim().isEmpty()) { %>
         <div class="alert alert-danger alert-dismissible fade show small d-flex align-items-center mb-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div><%= reqError %></div>
+            <div><%= com.protrack.util.ValidationUtil.sanitize(reqError) %></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <% } %>
 
         <form action="<%= request.getContextPath() %>/register" method="POST" class="needs-validation">
+            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label for="regFullName" class="form-label">Full Name</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
                         <input type="text" class="form-control" id="regFullName" name="fullName"
-                               value="<%= request.getAttribute("fullName") != null ? request.getAttribute("fullName") : "" %>"
+                               value="<%= com.protrack.util.ValidationUtil.sanitize((String) request.getAttribute("fullName")) %>"
                                placeholder="e.g. John Doe" required autofocus>
                     </div>
                 </div>
@@ -60,22 +61,15 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
                         <input type="email" class="form-control" id="regEmail" name="email"
-                               value="<%= request.getAttribute("email") != null ? request.getAttribute("email") : "" %>"
+                               value="<%= com.protrack.util.ValidationUtil.sanitize((String) request.getAttribute("email")) %>"
                                placeholder="john@example.com" required>
                     </div>
                 </div>
 
                 <div class="col-12">
-                    <label for="regRole" class="form-label">Desired Role</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light text-muted"><i class="bi bi-briefcase"></i></span>
-                        <select class="form-select" id="regRole" name="role" required>
-                            <option value="TEAM_MEMBER" selected>Team Member (Developer, Designer, QA)</option>
-                            <option value="PROJECT_MANAGER">Project Manager (Create projects, assign tasks)</option>
-                        </select>
-                    </div>
-                    <div class="form-text small text-muted">
-                        Administrators can reassign or adjust roles at any time from the User Management panel.
+                    <div class="p-3 bg-light rounded-3 border small text-muted d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill text-primary me-2 fs-5"></i>
+                        <span>New accounts are registered as <strong>Team Member</strong>. Project Manager and Administrator privileges can be assigned by system administrators.</span>
                     </div>
                 </div>
 
@@ -84,7 +78,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-shield-lock"></i></span>
                         <input type="password" class="form-control" id="regPassword" name="password"
-                               placeholder="At least 6 characters" minlength="6" required>
+                               placeholder="At least 8 characters" minlength="8" required>
                     </div>
                 </div>
 
@@ -93,7 +87,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-shield-check"></i></span>
                         <input type="password" class="form-control" id="regConfirmPassword" name="confirmPassword"
-                               placeholder="Re-enter password" minlength="6" required>
+                               placeholder="Re-enter password" minlength="8" required>
                     </div>
                 </div>
             </div>

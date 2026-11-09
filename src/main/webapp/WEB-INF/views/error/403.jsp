@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.protrack.model.User" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     User currentUser = (User) session.getAttribute("currentUser");
     String cp = request.getContextPath();
@@ -32,7 +33,7 @@
     <h1 class="display-5 fw-bold text-dark mb-1">403</h1>
     <h4 class="fw-bold text-danger mb-3">Access Denied (Forbidden)</h4>
     <p class="text-secondary mb-4">
-        <%= errorMsg %>
+        <%= ValidationUtil.escapeXml(errorMsg) %>
     </p>
     <div>
         <a href="<%= returnUrl %>" class="btn btn-primary px-4 py-2 fw-medium">

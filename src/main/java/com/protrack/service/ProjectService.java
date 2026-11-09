@@ -54,7 +54,9 @@ public class ProjectService {
 
     public Project createProject(String title, String description, Date startDate, Date endDate,
                                  int managerId, String status, List<Integer> memberIds, Integer actorUserId) throws AppException {
-        if (!ValidationUtil.isNotEmpty(title)) {
+        String cleanTitle = ValidationUtil.sanitize(title);
+        String cleanDesc = ValidationUtil.sanitize(description);
+        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
             throw new AppException("Project title is required.");
         }
         if (startDate == null || endDate == null) {
@@ -68,7 +70,7 @@ public class ProjectService {
         }
 
         String projectStatus = ValidationUtil.isNotEmpty(status) ? status.toUpperCase() : "PLANNING";
-        Project project = new Project(0, title.trim(), description, startDate, endDate, managerId, projectStatus);
+        Project project = new Project(0, cleanTitle, cleanDesc, startDate, endDate, managerId, projectStatus);
 
         Project saved;
         if (memberIds != null && !memberIds.isEmpty()) {
@@ -85,7 +87,9 @@ public class ProjectService {
                               int managerId, String status, Integer actorUserId) throws AppException {
         Project existing = getProjectById(projectId);
 
-        if (!ValidationUtil.isNotEmpty(title)) {
+        String cleanTitle = ValidationUtil.sanitize(title);
+        String cleanDesc = ValidationUtil.sanitize(description);
+        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
             throw new AppException("Project title is required.");
         }
         if (startDate == null || endDate == null) {
@@ -98,8 +102,8 @@ public class ProjectService {
             throw new AppException("A valid project manager must be assigned.");
         }
 
-        existing.setTitle(title.trim());
-        existing.setDescription(description);
+        existing.setTitle(cleanTitle);
+        existing.setDescription(cleanDesc);
         existing.setStartDate(startDate);
         existing.setEndDate(endDate);
         existing.setManagerId(managerId);

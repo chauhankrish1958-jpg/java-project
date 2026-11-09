@@ -4,6 +4,7 @@
 <%@ page import="com.protrack.model.Project" %>
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "Team Member Cockpit");
     request.setAttribute("pageSubtitle", "Track your assigned sprint deliverables, update progress and hit deadlines");
@@ -151,11 +152,11 @@
                                     for (Task t : myTasks) { %>
                                     <tr>
                                         <td>
-                                            <div class="fw-semibold text-dark"><%= t.getTaskTitle() %></div>
-                                            <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? t.getDescription() : "" %></div>
+                                            <div class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(t.getTaskTitle()) %></div>
+                                            <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? ValidationUtil.escapeXml(t.getDescription()) : "" %></div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-light text-dark border text-truncate" style="max-width: 150px;"><%= t.getProjectName() %></span>
+                                            <span class="badge bg-light text-dark border text-truncate" style="max-width: 150px;"><%= ValidationUtil.escapeXml(t.getProjectName()) %></span>
                                         </td>
                                         <td>
                                             <span class="badge badge-custom <%= t.getPriority().getBadgeClass() %>">
@@ -179,7 +180,7 @@
                                             <button type="button" class="btn btn-sm btn-outline-custom" title="Change Status"
                                                     data-bs-toggle="modal" data-bs-target="#updateStatusModal"
                                                     data-id="<%= t.getId() %>"
-                                                    data-title="<%= t.getTaskTitle() %>"
+                                                    data-title="<%= ValidationUtil.escapeXml(t.getTaskTitle()) %>"
                                                     data-status="<%= t.getStatus().name() %>">
                                                 <i class="bi bi-arrow-repeat text-primary"></i>
                                             </button>
@@ -214,11 +215,11 @@
                                 for (Project p : myProjects) { %>
                                 <li class="list-group-item p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="fw-bold mb-0 text-dark"><%= p.getTitle() %></h6>
+                                        <h6 class="fw-bold mb-0 text-dark"><%= ValidationUtil.escapeXml(p.getTitle()) %></h6>
                                         <span class="badge badge-custom <%= p.getStatusBadgeClass() %>"><%= p.getStatus() %></span>
                                     </div>
                                     <div class="small text-muted mb-2">
-                                        <i class="bi bi-person me-1"></i> PM: <%= p.getManagerName() != null ? p.getManagerName() : "Unassigned" %>
+                                        <i class="bi bi-person me-1"></i> PM: <%= p.getManagerName() != null ? ValidationUtil.escapeXml(p.getManagerName()) : "Unassigned" %>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center small mb-1">
                                         <span class="text-muted"><%= p.getCompletedTasks() %> / <%= p.getTotalTasks() %> tasks</span>
@@ -247,6 +248,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/member/tasks" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="updateStatus">
                 <input type="hidden" id="statusTaskId" name="taskId" value="">
                 <div class="modal-header bg-light">

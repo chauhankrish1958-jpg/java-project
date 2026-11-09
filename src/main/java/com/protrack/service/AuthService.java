@@ -75,7 +75,8 @@ public class AuthService {
             throw new AppException("Public registration is currently disabled by administrator.");
         }
 
-        if (!ValidationUtil.isNotEmpty(fullName)) {
+        String cleanFullName = ValidationUtil.sanitize(fullName);
+        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
             throw new AppException("Full name is required.");
         }
 
@@ -84,7 +85,7 @@ public class AuthService {
         }
 
         if (!ValidationUtil.isStrongPassword(password)) {
-            throw new AppException("Password must be at least 6 characters long.");
+            throw new AppException("Password must be at least 8 characters long.");
         }
 
         if (userDAO.emailExists(email.trim().toLowerCase(), null)) {
@@ -94,7 +95,7 @@ public class AuthService {
         Role assignedRole = (role != null) ? role : Role.TEAM_MEMBER;
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
-        User user = UserFactory.createUser(0, fullName.trim(), email.trim().toLowerCase(), hashedPassword, assignedRole, "ACTIVE");
+        User user = UserFactory.createUser(0, cleanFullName, email.trim().toLowerCase(), hashedPassword, assignedRole, "ACTIVE");
         User savedUser = userDAO.save(user);
 
         activityDAO.log(savedUser.getId(), "USER_REGISTER", "New user registered: " + savedUser.getFullName() + " (" + assignedRole.getDisplayName() + ")", "USER", savedUser.getId());
@@ -110,7 +111,7 @@ public class AuthService {
         }
 
         if (!ValidationUtil.isStrongPassword(newPassword)) {
-            throw new AppException("New password must be at least 6 characters long.");
+            throw new AppException("New password must be at least 8 characters long.");
         }
 
         Optional<User> userOpt = userDAO.findById(userId);

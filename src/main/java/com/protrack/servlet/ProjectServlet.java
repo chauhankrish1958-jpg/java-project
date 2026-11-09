@@ -119,10 +119,24 @@ public class ProjectServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
-        Integer actorUserId = (currentUser != null) ? currentUser.getId() : null;
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
 
-        String uri = request.getRequestURI();
-        String redirectTarget = uri.contains("/admin/") ? request.getContextPath() + "/admin/projects"
+        Integer actorUserId = currentUser.getId();
+        Role userRole = currentUser.getRole();
+
+        // Security: Team Members cannot perform project administrative actions
+        if (userRole == Role.TEAM_MEMBER) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            session.setAttribute("flash_error", "Access Denied: Team members are not permitted to modify projects.");
+            response.sendRedirect(request.getContextPath() + "/member/projects");
+            return;
+        }
+
+        String redirectTarget = (userRole == Role.ADMIN)
+                ? request.getContextPath() + "/admin/projects"
                 : request.getContextPath() + "/manager/projects";
 
         String action = request.getParameter("action");
@@ -138,10 +152,10 @@ public class ProjectServlet extends HttpServlet {
                     String status = request.getParameter("status");
 
                     int managerId;
-                    if (currentUser != null && currentUser.getRole() == Role.PROJECT_MANAGER) {
+                    if (userRole == Role.PROJECT_MANAGER) {
                         managerId = currentUser.getId();
                     } else {
-                        managerId = ValidationUtil.parsePositiveInt(request.getParameter("managerId"), (currentUser != null ? currentUser.getId() : 0));
+                        managerId = ValidationUtil.parsePositiveInt(request.getParameter("managerId"), currentUser.getId());
                     }
 
                     String[] memberIdsRaw = request.getParameterValues("memberIds");
@@ -158,6 +172,14 @@ public class ProjectServlet extends HttpServlet {
                 }
                 case "update" -> {
                     int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
+                    Project existing = projectService.getProjectById(projectId);
+
+                    // Project Managers can only edit projects assigned to them
+                    if (userRole == Role.PROJECT_MANAGER && existing.getManagerId() != currentUser.getId()) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: You can only edit projects assigned to you.");
+                    }
+
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
                     Date startDate = DateUtil.parseSqlDate(request.getParameter("startDate"));
@@ -165,10 +187,10 @@ public class ProjectServlet extends HttpServlet {
                     String status = request.getParameter("status");
 
                     int managerId;
-                    if (currentUser != null && currentUser.getRole() == Role.PROJECT_MANAGER) {
+                    if (userRole == Role.PROJECT_MANAGER) {
                         managerId = currentUser.getId();
                     } else {
-                        managerId = ValidationUtil.parsePositiveInt(request.getParameter("managerId"), (currentUser != null ? currentUser.getId() : 0));
+                        managerId = ValidationUtil.parsePositiveInt(request.getParameter("managerId"), existing.getManagerId());
                     }
 
                     projectService.updateProject(projectId, title, description, startDate, endDate, managerId, status, actorUserId);
@@ -176,11 +198,25 @@ public class ProjectServlet extends HttpServlet {
                 }
                 case "delete" -> {
                     int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
+                    Project existing = projectService.getProjectById(projectId);
+
+                    // Only Admins or the assigning Project Manager can delete projects
+                    if (userRole == Role.PROJECT_MANAGER && existing.getManagerId() != currentUser.getId()) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: You can only delete projects assigned to you.");
+                    }
+
                     projectService.deleteProject(projectId, actorUserId);
                     session.setAttribute("flash_success", "Project deleted successfully.");
                 }
                 case "assignMember" -> {
                     int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
+                    Project existing = projectService.getProjectById(projectId);
+                    if (userRole == Role.PROJECT_MANAGER && existing.getManagerId() != currentUser.getId()) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: You can only manage members for your assigned projects.");
+                    }
+
                     int userId = ValidationUtil.parsePositiveInt(request.getParameter("userId"), 0);
                     projectService.assignMember(projectId, userId, actorUserId);
                     session.setAttribute("flash_success", "Team member assigned to project.");
@@ -188,6 +224,12 @@ public class ProjectServlet extends HttpServlet {
                 }
                 case "removeMember" -> {
                     int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
+                    Project existing = projectService.getProjectById(projectId);
+                    if (userRole == Role.PROJECT_MANAGER && existing.getManagerId() != currentUser.getId()) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: You can only manage members for your assigned projects.");
+                    }
+
                     int userId = ValidationUtil.parsePositiveInt(request.getParameter("userId"), 0);
                     projectService.removeMember(projectId, userId, actorUserId);
                     session.setAttribute("flash_success", "Team member removed from project.");
@@ -198,7 +240,7 @@ public class ProjectServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
-            session.setAttribute("flash_error", "Operation failed: " + e.getMessage());
+            session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 
         response.sendRedirect(redirectTarget);

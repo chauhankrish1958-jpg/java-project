@@ -10,3 +10,7 @@ maven/
 .settings/
 .classpath
 .project
+lib/
+*.jar
+data/
+tools/

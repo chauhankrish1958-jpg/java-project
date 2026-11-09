@@ -105,12 +105,18 @@ public class TaskServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
-        Integer actorUserId = (currentUser != null) ? currentUser.getId() : null;
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
 
-        String uri = request.getRequestURI();
-        String redirectTarget = uri.contains("/manager/tasks")
-                ? request.getContextPath() + "/manager/tasks"
-                : request.getContextPath() + "/member/tasks";
+        Integer actorUserId = currentUser.getId();
+        Role userRole = currentUser.getRole();
+
+        // Redirect target based on role to prevent unauthorized URL redirect
+        String redirectTarget = (userRole == Role.TEAM_MEMBER)
+                ? request.getContextPath() + "/member/tasks"
+                : request.getContextPath() + "/manager/tasks";
 
         String action = request.getParameter("action");
         if (action == null) action = "create";
@@ -118,9 +124,25 @@ public class TaskServlet extends HttpServlet {
         try {
             switch (action) {
                 case "create" -> {
+                    // Security: Only Admins and Project Managers can create tasks
+                    if (userRole == Role.TEAM_MEMBER) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: Team members are not permitted to create tasks.");
+                    }
+
+                    int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
+
+                    // If Project Manager, verify project ownership
+                    if (userRole == Role.PROJECT_MANAGER) {
+                        Project proj = projectService.getProjectById(projectId);
+                        if (proj.getManagerId() != currentUser.getId()) {
+                            throw new com.protrack.exception.UnauthorizedAccessException(
+                                    "Access Denied: You can only create tasks for projects assigned to you.");
+                        }
+                    }
+
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
-                    int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
                     int assignedTo = ValidationUtil.parsePositiveInt(request.getParameter("assignedTo"), 0);
                     String priorityStr = request.getParameter("priority");
                     String statusStr = request.getParameter("status");
@@ -135,7 +157,24 @@ public class TaskServlet extends HttpServlet {
                     session.setAttribute("flash_success", "Task \"" + created.getTaskTitle() + "\" created successfully.");
                 }
                 case "update" -> {
+                    // Security: Only Admins and Project Managers can modify task definitions
+                    if (userRole == Role.TEAM_MEMBER) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: Team members are not permitted to edit task definitions.");
+                    }
+
                     int taskId = ValidationUtil.parsePositiveInt(request.getParameter("taskId"), 0);
+                    Task existing = taskService.getTaskById(taskId);
+
+                    // If Project Manager, verify project ownership
+                    if (userRole == Role.PROJECT_MANAGER) {
+                        Project proj = projectService.getProjectById(existing.getProjectId());
+                        if (proj.getManagerId() != currentUser.getId()) {
+                            throw new com.protrack.exception.UnauthorizedAccessException(
+                                    "Access Denied: You can only edit tasks for projects assigned to you.");
+                        }
+                    }
+
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
                     int projectId = ValidationUtil.parsePositiveInt(request.getParameter("projectId"), 0);
@@ -157,11 +196,28 @@ public class TaskServlet extends HttpServlet {
                     String statusStr = request.getParameter("status");
                     TaskStatus newStatus = TaskStatus.fromString(statusStr);
 
-                    taskService.updateTaskStatus(taskId, newStatus, actorUserId);
+                    // Security: Verifies ownership for TEAM_MEMBER (can only change their own assigned task)
+                    taskService.updateTaskStatusWithRoleCheck(taskId, newStatus, currentUser);
                     session.setAttribute("flash_success", "Task status updated to " + newStatus.getLabel() + ".");
                 }
                 case "delete" -> {
+                    // Security: Only Admins and Project Managers can delete tasks
+                    if (userRole == Role.TEAM_MEMBER) {
+                        throw new com.protrack.exception.UnauthorizedAccessException(
+                                "Access Denied: Team members are not permitted to delete tasks.");
+                    }
+
                     int taskId = ValidationUtil.parsePositiveInt(request.getParameter("taskId"), 0);
+                    Task existing = taskService.getTaskById(taskId);
+
+                    if (userRole == Role.PROJECT_MANAGER) {
+                        Project proj = projectService.getProjectById(existing.getProjectId());
+                        if (proj.getManagerId() != currentUser.getId()) {
+                            throw new com.protrack.exception.UnauthorizedAccessException(
+                                    "Access Denied: You can only delete tasks for projects assigned to you.");
+                        }
+                    }
+
                     taskService.deleteTask(taskId, actorUserId);
                     session.setAttribute("flash_success", "Task deleted successfully.");
                 }
@@ -170,7 +226,7 @@ public class TaskServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
-            session.setAttribute("flash_error", "Operation failed: " + e.getMessage());
+            session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 
         response.sendRedirect(redirectTarget);

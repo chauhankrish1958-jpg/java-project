@@ -83,25 +83,26 @@
         <% if (displaySuccess != null) { %>
         <div class="alert alert-success alert-dismissible fade show small d-flex align-items-center mb-3" role="alert">
             <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-            <div><%= displaySuccess %></div>
+            <div><%= com.protrack.util.ValidationUtil.sanitize(displaySuccess) %></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <% } %>
         <% if (displayError != null) { %>
         <div class="alert alert-danger alert-dismissible fade show small d-flex align-items-center mb-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div><%= displayError %></div>
+            <div><%= com.protrack.util.ValidationUtil.sanitize(displayError) %></div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <% } %>
 
         <form action="<%= request.getContextPath() %>/login" method="POST" class="needs-validation" novalidate>
+            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
             <div class="mb-3">
                 <label for="loginEmail" class="form-label">Email Address</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
                     <input type="email" class="form-control border-start-0 ps-0" id="loginEmail" name="email"
-                           value="<%= request.getAttribute("email") != null ? request.getAttribute("email") : "" %>"
+                           value="<%= com.protrack.util.ValidationUtil.sanitize((String) request.getAttribute("email")) %>"
                            placeholder="name@company.com" required autofocus>
                 </div>
             </div>

@@ -1,10 +1,6 @@
 package com.protrack.util;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -13,10 +9,10 @@ import java.sql.Statement;
 import java.util.Properties;
 
 /**
- * DatabaseConnection Manager.
+ * Database Connection Manager for ProTrack.
  * Demonstrates singleton pattern, JDBC connection lifecycle management,
- * configuration loading via properties file, safe resource closure,
- * and seamless fallback persistence for guaranteed demonstration reliability.
+ * configuration loading via db.properties, environment variable overrides,
+ * safe resource closure, and loud, explicit failure on MySQL unavailability.
  */
 public class DBConnection {
 
@@ -25,15 +21,8 @@ public class DBConnection {
     private static String jdbcPassword;
     private static String jdbcDriver;
     private static boolean isInitialized = false;
-    private static boolean useFallbackH2 = false;
-    private static boolean fallbackSchemaInitialized = false;
+    private static String initializationError = null;
 
-    private static final String H2_DRIVER = "org.h2.Driver";
-    private static final String H2_URL = "jdbc:h2:./data/protrack_db;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE";
-    private static final String H2_USER = "sa";
-    private static final String H2_PASSWORD = "";
-
-    // Static initialization block
     static {
         init();
     }
@@ -47,10 +36,10 @@ public class DBConnection {
                 props.load(in);
             }
         } catch (Exception e) {
-            System.err.println("[DBConnection] Notice: db.properties load note: " + e.getMessage());
+            System.err.println("[DBConnection] Notice: Unable to load db.properties: " + e.getMessage());
         }
 
-        // Environment variables override properties file
+        // Environment variables override properties file for cloud and container deployments
         jdbcDriver = System.getenv("DB_DRIVER");
         if (jdbcDriver == null || jdbcDriver.trim().isEmpty()) {
             jdbcDriver = props.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");
@@ -74,33 +63,18 @@ public class DBConnection {
         try {
             Class.forName(jdbcDriver);
             isInitialized = true;
-            System.out.println("[DBConnection] Primary JDBC Driver loaded: " + jdbcDriver);
+            initializationError = null;
+            System.out.println("[DBConnection] MySQL JDBC Driver loaded: " + jdbcDriver);
         } catch (ClassNotFoundException e) {
-            System.err.println("[DBConnection] Notice: MySQL driver not in runtime, switching to fallback engine.");
-            useFallbackH2 = true;
-        }
-
-        // Verify if primary MySQL is reachable
-        if (!useFallbackH2) {
-            try (Connection test = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)) {
-                System.out.println("[DBConnection] Successfully connected to primary MySQL database at " + jdbcUrl);
-            } catch (SQLException e) {
-                System.out.println("[DBConnection] Primary MySQL connection note: " + e.getMessage());
-                System.out.println("[DBConnection] Engaging seamless embedded persistence engine (MySQL mode) for instant demonstration.");
-                useFallbackH2 = true;
-            }
-        }
-
-        if (useFallbackH2) {
-            try {
-                Class.forName(H2_DRIVER);
-                new File("./data").mkdirs();
-            } catch (ClassNotFoundException ignored) {}
+            initializationError = "MySQL JDBC Driver not found in classpath: " + jdbcDriver;
+            System.err.println("[DBConnection] Critical: " + initializationError);
         }
     }
 
     /**
-     * Obtains a live JDBC Connection.
+     * Obtains a live JDBC Connection to the configured MySQL database.
+     * Fails loudly with an explicit, descriptive SQLException if MySQL is unreachable.
+     *
      * @return java.sql.Connection
      * @throws SQLException if connection fails
      */
@@ -109,90 +83,41 @@ public class DBConnection {
             init();
         }
 
-        if (useFallbackH2) {
-            Connection conn = DriverManager.getConnection(H2_URL, H2_USER, H2_PASSWORD);
-            initFallbackSchemaIfNeeded(conn);
-            return conn;
+        if (initializationError != null) {
+            throw new SQLException(initializationError);
         }
 
         try {
             return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
         } catch (SQLException e) {
-            // If MySQL was previously running but dropped, fallback seamlessly
-            System.err.println("[DBConnection] Primary MySQL failed (" + e.getMessage() + "), using fallback engine.");
-            useFallbackH2 = true;
-            Connection conn = DriverManager.getConnection(H2_URL, H2_USER, H2_PASSWORD);
-            initFallbackSchemaIfNeeded(conn);
-            return conn;
+            String errorMsg = String.format(
+                "Failed to connect to MySQL database at [%s] with user [%s]. " +
+                "Ensure MySQL Server is running on localhost:3306 and schema 'project_management_db' " +
+                "is initialized via database.sql. Underlying cause: %s",
+                jdbcUrl, jdbcUser, e.getMessage()
+            );
+            System.err.println("[DBConnection] " + errorMsg);
+            throw new SQLException(errorMsg, e);
         }
     }
 
-    private static synchronized void initFallbackSchemaIfNeeded(Connection conn) {
-        if (fallbackSchemaInitialized) return;
-
-        try {
-            // Check if users table already exists
-            try (Statement s = conn.createStatement();
-                 ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM users")) {
-                if (rs.next()) {
-                    fallbackSchemaInitialized = true;
-                    return;
-                }
-            } catch (SQLException ignored) {
-                // Table does not exist, run schema creation
-            }
-
-            InputStream in = DBConnection.class.getClassLoader().getResourceAsStream("database.sql");
-            if (in == null) {
-                File f = new File("database.sql");
-                if (f.exists()) in = new java.io.FileInputStream(f);
-            }
-
-            if (in != null) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-                     Statement stmt = conn.createStatement()) {
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        String trimmed = line.trim();
-                        if (trimmed.isEmpty() || trimmed.startsWith("--") || trimmed.startsWith("//") || trimmed.startsWith("#")) {
-                            continue;
-                        }
-                        // Skip database creation / use commands in H2
-                        if (trimmed.toUpperCase().startsWith("CREATE DATABASE") || trimmed.toUpperCase().startsWith("USE ")) {
-                            continue;
-                        }
-                        sb.append(line).append("\n");
-                        if (trimmed.endsWith(";")) {
-                            String sql = sb.toString().trim();
-                            sql = sql.substring(0, sql.length() - 1).trim();
-                            if (!sql.isEmpty()) {
-                                try {
-                                    stmt.execute(sql);
-                                } catch (SQLException ex) {
-                                    // Ignore non-fatal statement warnings
-                                }
-                            }
-                            sb.setLength(0);
-                        }
-                    }
-                    System.out.println("[DBConnection] Fallback database schema and seed data loaded successfully.");
-                }
-            }
-            fallbackSchemaInitialized = true;
-        } catch (Exception e) {
-            System.err.println("[DBConnection] Error setting up fallback schema: " + e.getMessage());
-        }
-    }
-
+    /**
+     * Safely closes Statement and ResultSet.
+     */
     public static void close(Statement stmt, ResultSet rs) {
         close(null, stmt, rs);
     }
 
+    /**
+     * Safely closes Connection and Statement.
+     */
     public static void close(Connection conn, Statement stmt) {
         close(conn, stmt, null);
     }
 
+    /**
+     * Safely closes Connection, Statement and ResultSet.
+     */
     public static void close(Connection conn, Statement stmt, ResultSet rs) {
         if (rs != null) {
             try { rs.close(); } catch (SQLException ignored) {}
@@ -205,12 +130,18 @@ public class DBConnection {
         }
     }
 
+    /**
+     * Helper to safely rollback transactions without throwing exceptions.
+     */
     public static void rollback(Connection conn) {
         if (conn != null) {
             try { conn.rollback(); } catch (SQLException ignored) {}
         }
     }
 
+    /**
+     * Tests if the MySQL database is currently reachable.
+     */
     public static boolean testConnection() {
         try (Connection conn = getConnection()) {
             return conn != null && !conn.isClosed();
@@ -219,7 +150,10 @@ public class DBConnection {
         }
     }
 
+    /**
+     * Returns false since silent embedded fallback has been removed.
+     */
     public static boolean isUsingFallback() {
-        return useFallbackH2;
+        return false;
     }
 }

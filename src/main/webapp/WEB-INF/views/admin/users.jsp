@@ -3,6 +3,7 @@
 <%@ page import="com.protrack.model.User" %>
 <%@ page import="com.protrack.model.Role" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "User Management");
     request.setAttribute("pageSubtitle", "Provision team credentials, configure system roles, and govern account permissions");
@@ -32,7 +33,7 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control table-search-input" data-target="usersTable"
-                                   name="q" value="<%= searchQuery != null ? searchQuery : "" %>"
+                                   name="q" value="<%= searchQuery != null ? ValidationUtil.escapeXml(searchQuery) : "" %>"
                                    placeholder="Search by name or email address...">
                         </div>
                     </div>
@@ -92,13 +93,13 @@
                                     <div class="d-flex align-items-center">
                                         <div class="rounded-circle bg-light text-primary border fw-bold d-flex align-items-center justify-content-center me-2"
                                              style="width: 34px; height: 34px; font-size: 0.85rem;">
-                                            <%= u.getFullName() != null && !u.getFullName().isEmpty() ? u.getFullName().substring(0, 1).toUpperCase() : "U" %>
+                                            <%= u.getFullName() != null && !u.getFullName().isEmpty() ? ValidationUtil.escapeXml(u.getFullName().substring(0, 1).toUpperCase()) : "U" %>
                                         </div>
-                                        <span class="fw-semibold text-dark"><%= u.getFullName() %></span>
+                                        <span class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(u.getFullName()) %></span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-secondary"><%= u.getEmail() %></span>
+                                    <span class="text-secondary"><%= ValidationUtil.escapeXml(u.getEmail()) %></span>
                                 </td>
                                 <td>
                                     <span class="badge badge-custom badge-role-<%= u.getRole().name() %>">
@@ -120,8 +121,8 @@
                                         <button type="button" class="btn btn-outline-custom" title="Edit User"
                                                 data-bs-toggle="modal" data-bs-target="#editUserModal"
                                                 data-id="<%= u.getId() %>"
-                                                data-name="<%= u.getFullName() %>"
-                                                data-email="<%= u.getEmail() %>"
+                                                data-name="<%= ValidationUtil.escapeXml(u.getFullName()) %>"
+                                                data-email="<%= ValidationUtil.escapeXml(u.getEmail()) %>"
                                                 data-role="<%= u.getRole().name() %>"
                                                 data-status="<%= u.getStatus() %>">
                                             <i class="bi bi-pencil-square text-primary"></i>
@@ -129,7 +130,7 @@
                                         <button type="button" class="btn btn-outline-custom" title="Delete User"
                                                 data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
                                                 data-id="<%= u.getId() %>"
-                                                data-name="<%= u.getFullName() %> (<%= u.getEmail() %>)"
+                                                data-name="<%= ValidationUtil.escapeXml(u.getFullName()) %> (<%= ValidationUtil.escapeXml(u.getEmail()) %>)"
                                                 data-action="<%= request.getContextPath() %>/admin/users">
                                             <i class="bi bi-trash3 text-danger"></i>
                                         </button>
@@ -159,6 +160,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/admin/users" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold" id="addUserModalLabel"><i class="bi bi-person-plus text-primary me-2"></i>Add New User</h5>
@@ -175,7 +177,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="addPassword" class="form-label">Temporary Password</label>
-                        <input type="password" class="form-control" id="addPassword" name="password" placeholder="Min 6 characters" minlength="6" required>
+                        <input type="password" class="form-control" id="addPassword" name="password" placeholder="Min 8 characters" minlength="8" required>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
@@ -211,6 +213,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/admin/users" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" id="editUserId" name="userId" value="">
                 <div class="modal-header bg-light">
@@ -260,6 +263,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow">
             <form id="deleteForm" action="<%= request.getContextPath() %>/admin/users" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="userId" value="">
                 <div class="modal-body p-4 text-center">

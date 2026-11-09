@@ -51,14 +51,15 @@ public class UserService {
     }
 
     public User createUser(String fullName, String email, String password, Role role, String status, Integer actorUserId) throws AppException {
-        if (!ValidationUtil.isNotEmpty(fullName)) {
+        String cleanFullName = ValidationUtil.sanitize(fullName);
+        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
             throw new AppException("Full name is required.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
             throw new AppException("Please provide a valid email address.");
         }
         if (!ValidationUtil.isStrongPassword(password)) {
-            throw new AppException("Password must be at least 6 characters long.");
+            throw new AppException("Password must be at least 8 characters long.");
         }
         if (userDAO.emailExists(email.trim().toLowerCase(), null)) {
             throw new AppException("A user with this email address already exists.");
@@ -68,7 +69,7 @@ public class UserService {
         String userStatus = ValidationUtil.isNotEmpty(status) ? status.toUpperCase() : "ACTIVE";
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
-        User user = UserFactory.createUser(0, fullName.trim(), email.trim().toLowerCase(), hashedPassword, assignedRole, userStatus);
+        User user = UserFactory.createUser(0, cleanFullName, email.trim().toLowerCase(), hashedPassword, assignedRole, userStatus);
         User saved = userDAO.save(user);
 
         activityDAO.log(actorUserId, "USER_CREATE", "Created user " + saved.getFullName() + " (" + saved.getEmail() + ") with role " + assignedRole.name(), "USER", saved.getId());
@@ -78,7 +79,8 @@ public class UserService {
     public void updateUser(int userId, String fullName, String email, Role role, String status, Integer actorUserId) throws AppException {
         User existing = getUserById(userId);
 
-        if (!ValidationUtil.isNotEmpty(fullName)) {
+        String cleanFullName = ValidationUtil.sanitize(fullName);
+        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
             throw new AppException("Full name is required.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
@@ -88,7 +90,7 @@ public class UserService {
             throw new AppException("Another user is already registered with this email address.");
         }
 
-        existing.setFullName(fullName.trim());
+        existing.setFullName(cleanFullName);
         existing.setEmail(email.trim().toLowerCase());
         if (role != null) {
             existing.setRole(role);
@@ -108,7 +110,8 @@ public class UserService {
     public void updateProfile(int userId, String fullName, String email) throws AppException {
         User existing = getUserById(userId);
 
-        if (!ValidationUtil.isNotEmpty(fullName)) {
+        String cleanFullName = ValidationUtil.sanitize(fullName);
+        if (!ValidationUtil.isNotEmpty(cleanFullName)) {
             throw new AppException("Full name is required.");
         }
         if (!ValidationUtil.isValidEmail(email)) {
@@ -118,7 +121,7 @@ public class UserService {
             throw new AppException("Another user is already registered with this email address.");
         }
 
-        existing.setFullName(fullName.trim());
+        existing.setFullName(cleanFullName);
         existing.setEmail(email.trim().toLowerCase());
 
         boolean updated = userDAO.update(existing);

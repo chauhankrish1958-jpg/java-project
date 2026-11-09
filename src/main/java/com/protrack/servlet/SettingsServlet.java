@@ -62,14 +62,14 @@ public class SettingsServlet extends HttpServlet {
             }
             settingsService.updateSetting("allow_user_registration", "true".equals(allowReg) ? "true" : "false", "Public user registration switch", actorUserId);
             if (banner != null) {
-                settingsService.updateSetting("notification_banner", banner.trim(), "Dashboard announcement banner", actorUserId);
+                settingsService.updateSetting("notification_banner", com.protrack.util.ValidationUtil.sanitize(banner), "Dashboard announcement banner", actorUserId);
             }
 
             session.setAttribute("flash_success", "System settings saved successfully.");
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
-            session.setAttribute("flash_error", "Failed to save settings: " + e.getMessage());
+            session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/settings");

@@ -3,6 +3,7 @@
 <%@ page import="com.protrack.model.Project" %>
 <%@ page import="com.protrack.model.User" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "Project Governance");
     request.setAttribute("pageSubtitle", "Create projects, track milestone deliveries, and assign project managers");
@@ -36,7 +37,7 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control table-search-input" data-target="projectsTable"
-                                   name="q" value="<%= searchQuery != null ? searchQuery : "" %>"
+                                   name="q" value="<%= searchQuery != null ? ValidationUtil.escapeXml(searchQuery) : "" %>"
                                    placeholder="Search project title or description...">
                         </div>
                     </div>
@@ -92,19 +93,19 @@
                                 <td class="text-muted fw-semibold">#<%= p.getId() %></td>
                                 <td>
                                     <a href="<%= request.getContextPath() %>/admin/projects?action=view&id=<%= p.getId() %>" class="fw-semibold text-dark text-decoration-none">
-                                        <%= p.getTitle() %>
+                                        <%= ValidationUtil.escapeXml(p.getTitle()) %>
                                     </a>
-                                    <div class="small text-muted text-truncate" style="max-width: 280px;"><%= p.getDescription() != null ? p.getDescription() : "No description" %></div>
+                                    <div class="small text-muted text-truncate" style="max-width: 280px;"><%= p.getDescription() != null ? ValidationUtil.escapeXml(p.getDescription()) : "No description" %></div>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="rounded-circle bg-light border text-secondary fw-semibold d-flex align-items-center justify-content-center me-2"
                                              style="width: 30px; height: 30px; font-size: 0.8rem;">
-                                            <%= p.getManagerName() != null && !p.getManagerName().isEmpty() ? p.getManagerName().substring(0, 1).toUpperCase() : "M" %>
+                                            <%= p.getManagerName() != null && !p.getManagerName().isEmpty() ? ValidationUtil.escapeXml(p.getManagerName().substring(0, 1).toUpperCase()) : "M" %>
                                         </div>
                                         <div>
-                                            <span class="fw-medium text-dark"><%= p.getManagerName() != null ? p.getManagerName() : "Unassigned" %></span>
-                                            <div class="small text-muted"><%= p.getManagerEmail() != null ? p.getManagerEmail() : "" %></div>
+                                            <span class="fw-medium text-dark"><%= p.getManagerName() != null ? ValidationUtil.escapeXml(p.getManagerName()) : "Unassigned" %></span>
+                                            <div class="small text-muted"><%= p.getManagerEmail() != null ? ValidationUtil.escapeXml(p.getManagerEmail()) : "" %></div>
                                         </div>
                                     </div>
                                 </td>
@@ -134,8 +135,8 @@
                                         <button type="button" class="btn btn-outline-custom" title="Edit Project"
                                                 data-bs-toggle="modal" data-bs-target="#editProjectModal"
                                                 data-id="<%= p.getId() %>"
-                                                data-title="<%= p.getTitle() %>"
-                                                data-desc="<%= p.getDescription() != null ? p.getDescription() : "" %>"
+                                                data-title="<%= ValidationUtil.escapeXml(p.getTitle()) %>"
+                                                data-desc="<%= p.getDescription() != null ? ValidationUtil.escapeXml(p.getDescription()) : "" %>"
                                                 data-start="<%= DateUtil.formatInputDate(p.getStartDate()) %>"
                                                 data-end="<%= DateUtil.formatInputDate(p.getEndDate()) %>"
                                                 data-manager="<%= p.getManagerId() %>"
@@ -145,7 +146,7 @@
                                         <button type="button" class="btn btn-outline-custom" title="Delete Project"
                                                 data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
                                                 data-id="<%= p.getId() %>"
-                                                data-name="<%= p.getTitle() %>"
+                                                data-name="<%= ValidationUtil.escapeXml(p.getTitle()) %>"
                                                 data-action="<%= request.getContextPath() %>/admin/projects">
                                             <i class="bi bi-trash3 text-danger"></i>
                                         </button>
@@ -175,6 +176,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/admin/projects" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold" id="createProjectModalLabel"><i class="bi bi-folder-plus text-primary me-2"></i>Create New Project</h5>
@@ -196,7 +198,7 @@
                                 <option value="" disabled selected>-- Select Manager --</option>
                                 <% if (managers != null) {
                                     for (User m : managers) { %>
-                                    <option value="<%= m.getId() %>"><%= m.getFullName() %> (<%= m.getEmail() %>)</option>
+                                    <option value="<%= m.getId() %>"><%= ValidationUtil.escapeXml(m.getFullName()) %> (<%= ValidationUtil.escapeXml(m.getEmail()) %>)</option>
                                 <%  }
                                    } %>
                             </select>
@@ -226,7 +228,7 @@
                         <select class="form-select" name="memberIds" multiple size="4">
                             <% if (teamMembers != null) {
                                 for (User tm : teamMembers) { %>
-                                <option value="<%= tm.getId() %>"><%= tm.getFullName() %> &lt;<%= tm.getEmail() %>&gt;</option>
+                                <option value="<%= tm.getId() %>"><%= ValidationUtil.escapeXml(tm.getFullName()) %> &lt;<%= ValidationUtil.escapeXml(tm.getEmail()) %>&gt;</option>
                             <%  }
                                } %>
                         </select>
@@ -249,6 +251,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/admin/projects" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" id="editProjectId" name="projectId" value="">
                 <div class="modal-header bg-light">
@@ -270,7 +273,7 @@
                             <select class="form-select" id="editProjectManager" name="managerId" required>
                                 <% if (managers != null) {
                                     for (User m : managers) { %>
-                                    <option value="<%= m.getId() %>"><%= m.getFullName() %> (<%= m.getEmail() %>)</option>
+                                    <option value="<%= m.getId() %>"><%= ValidationUtil.escapeXml(m.getFullName()) %> (<%= ValidationUtil.escapeXml(m.getEmail()) %>)</option>
                                 <%  }
                                    } %>
                             </select>
@@ -313,6 +316,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow">
             <form id="deleteForm" action="<%= request.getContextPath() %>/admin/projects" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="projectId" value="">
                 <div class="modal-body p-4 text-center">

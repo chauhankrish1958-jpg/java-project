@@ -93,8 +93,8 @@ public class ProTrackUnitTest {
         assertFalse(ValidationUtil.isValidEmail("invalid-email"));
         assertFalse(ValidationUtil.isValidEmail("user@.com"));
 
-        assertTrue(ValidationUtil.isStrongPassword("123456"));
-        assertFalse(ValidationUtil.isStrongPassword("12345"));
+        assertTrue(ValidationUtil.isStrongPassword("12345678"));
+        assertFalse(ValidationUtil.isStrongPassword("1234567"));
 
         // XSS sanitization
         String dangerous = "<script>alert('xss');</script>";

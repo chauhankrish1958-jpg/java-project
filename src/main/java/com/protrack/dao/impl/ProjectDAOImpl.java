@@ -199,10 +199,26 @@ public class ProjectDAOImpl implements ProjectDAO {
     @Override
     public Project saveWithMembers(Project project, List<Integer> memberIds) {
         Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            return saveWithMembers(conn, project, memberIds);
+        } catch (SQLException e) {
+            throw new DatabaseOperationException("Failed to obtain database connection: " + e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    /**
+     * Executes project and member creation within a transactional boundary.
+     * Accessible for testing transaction commit and rollback behaviors.
+     */
+    public Project saveWithMembers(Connection conn, Project project, List<Integer> memberIds) {
         PreparedStatement psProj = null;
         PreparedStatement psMem = null;
         try {
-            conn = DBConnection.getConnection();
             // Start transaction
             conn.setAutoCommit(false);
 
@@ -251,11 +267,11 @@ public class ProjectDAOImpl implements ProjectDAO {
                     conn.setAutoCommit(true);
                 } catch (SQLException ignored) {}
             }
-            DBConnection.close(conn, psProj);
+            if (psProj != null) {
+                try { psProj.close(); } catch (SQLException ignored) {}
+            }
             if (psMem != null) {
-                try {
-                    psMem.close();
-                } catch (SQLException ignored) {}
+                try { psMem.close(); } catch (SQLException ignored) {}
             }
         }
     }

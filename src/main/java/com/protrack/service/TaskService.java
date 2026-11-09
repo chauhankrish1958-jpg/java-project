@@ -59,7 +59,10 @@ public class TaskService {
 
     public Task createTask(String title, String description, int projectId, Integer assignedTo,
                            TaskPriority priority, TaskStatus status, Date startDate, Date dueDate, Integer creatorUserId) throws AppException {
-        if (!ValidationUtil.isNotEmpty(title)) {
+        String cleanTitle = ValidationUtil.sanitize(title);
+        String cleanDesc = ValidationUtil.sanitize(description);
+
+        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
             throw new AppException("Task title is required.");
         }
         if (projectId <= 0) {
@@ -72,7 +75,7 @@ public class TaskService {
             throw new AppException("Due date cannot be before start date.");
         }
 
-        Task task = new Task(0, title.trim(), description, projectId, assignedTo,
+        Task task = new Task(0, cleanTitle, cleanDesc, projectId, assignedTo,
                 priority != null ? priority : TaskPriority.MEDIUM,
                 status != null ? status : TaskStatus.TODO,
                 startDate, dueDate, creatorUserId);
@@ -87,7 +90,10 @@ public class TaskService {
                            TaskPriority priority, TaskStatus status, Date startDate, Date dueDate, Integer actorUserId) throws AppException {
         Task existing = getTaskById(taskId);
 
-        if (!ValidationUtil.isNotEmpty(title)) {
+        String cleanTitle = ValidationUtil.sanitize(title);
+        String cleanDesc = ValidationUtil.sanitize(description);
+
+        if (!ValidationUtil.isNotEmpty(cleanTitle)) {
             throw new AppException("Task title is required.");
         }
         if (dueDate == null) {
@@ -97,8 +103,8 @@ public class TaskService {
             throw new AppException("Due date cannot be before start date.");
         }
 
-        existing.setTaskTitle(title.trim());
-        existing.setDescription(description);
+        existing.setTaskTitle(cleanTitle);
+        existing.setDescription(cleanDesc);
         existing.setProjectId(projectId);
         existing.setAssignedTo(assignedTo);
         if (priority != null) existing.setPriority(priority);
@@ -112,6 +118,19 @@ public class TaskService {
         }
 
         activityDAO.log(actorUserId, "TASK_UPDATE", "Updated task details for: \"" + existing.getTaskTitle() + "\"", "TASK", taskId);
+    }
+
+    public void updateTaskStatusWithRoleCheck(int taskId, TaskStatus newStatus, com.protrack.model.User actor) throws AppException {
+        if (actor == null) {
+            throw new com.protrack.exception.UnauthorizedAccessException("Authentication required.");
+        }
+        Task existing = getTaskById(taskId);
+        if (actor.getRole() == com.protrack.model.Role.TEAM_MEMBER) {
+            if (existing.getAssignedTo() == null || !existing.getAssignedTo().equals(actor.getId())) {
+                throw new com.protrack.exception.UnauthorizedAccessException("Access Denied: You can only update the status of tasks assigned directly to you.");
+            }
+        }
+        updateTaskStatus(taskId, newStatus, actor.getId());
     }
 
     public void updateTaskStatus(int taskId, TaskStatus newStatus, Integer actorUserId) throws AppException {

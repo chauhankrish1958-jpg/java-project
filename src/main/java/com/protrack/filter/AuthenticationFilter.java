@@ -33,18 +33,30 @@ public class AuthenticationFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
 
         String contextPath = request.getContextPath();
-        String uri = request.getRequestURI().substring(contextPath.length());
+        String servletPath = request.getServletPath();
+        String pathInfo = request.getPathInfo();
+        String uri = (servletPath != null ? servletPath : "") + (pathInfo != null ? pathInfo : "");
+        if (uri.isEmpty()) uri = "/";
 
-        // 1. Allow static resources (CSS, JS, images, fonts)
-        if (uri.startsWith("/assets/") || uri.endsWith(".css") || uri.endsWith(".js")
-                || uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".ico")
-                || uri.endsWith(".svg")) {
+        // Neutralize Matrix Parameters (;...) and path confusion bypasses
+        int semicolonIndex = uri.indexOf(';');
+        if (semicolonIndex >= 0) {
+            uri = uri.substring(0, semicolonIndex);
+        }
+
+        // 1. Allow static resources strictly from /assets/ directory
+        if (uri.startsWith("/assets/")) {
             chain.doFilter(req, res);
             return;
         }
 
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+
+        // Ensure CSRF token is available on active session for forms
+        if (session != null) {
+            com.protrack.util.CSRFTokenUtil.getToken(session);
+        }
 
         // 2. Public auth endpoints
         boolean isPublicPath = uri.equals("/login") || uri.equals("/register") || uri.equals("/index.jsp")
@@ -69,7 +81,18 @@ public class AuthenticationFilter implements Filter {
             return;
         }
 
-        // 4. Role-based URL Authorization
+        // 4. Validate CSRF token on protected state-changing POST requests
+        if ("POST".equalsIgnoreCase(request.getMethod()) && !isPublicPath) {
+            if (!com.protrack.util.CSRFTokenUtil.isValid(request)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                session.setAttribute("flash_error", "Security alert: Invalid or missing CSRF token. Operation rejected.");
+                request.setAttribute("errorMessage", "Security validation failed: Invalid or missing CSRF token.");
+                request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
+                return;
+            }
+        }
+
+        // 5. Role-based URL Authorization
         Role role = currentUser.getRole();
 
         // Admin-only endpoints

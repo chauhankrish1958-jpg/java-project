@@ -93,7 +93,7 @@ public class ProfileServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
-            session.setAttribute("flash_error", "Operation failed: " + e.getMessage());
+            session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 
         response.sendRedirect(request.getContextPath() + "/profile");

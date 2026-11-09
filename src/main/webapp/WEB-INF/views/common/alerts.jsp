@@ -16,7 +16,7 @@
 <% if (successMsg != null && !successMsg.trim().isEmpty()) { %>
 <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm border-0" role="alert">
     <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-    <div class="fw-medium"><%= successMsg %></div>
+    <div class="fw-medium"><%= com.protrack.util.ValidationUtil.sanitize(successMsg) %></div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 <% } %>
@@ -24,7 +24,7 @@
 <% if (errorMsg != null && !errorMsg.trim().isEmpty()) { %>
 <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm border-0" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-    <div class="fw-medium"><%= errorMsg %></div>
+    <div class="fw-medium"><%= com.protrack.util.ValidationUtil.sanitize(errorMsg) %></div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 <% } %>

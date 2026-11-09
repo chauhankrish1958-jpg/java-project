@@ -40,14 +40,14 @@
 | :--- | :--- | :--- |
 | **Language** | Java | Java SE 17 (LTS) / Java 21 compatible |
 | **Web Server / Servlet Container** | Apache Tomcat | Version 10.1+ (Jakarta EE 10 / Servlet 6.0) |
-| **Database** | MySQL | MySQL 8.0+ / MariaDB 10.3+ |
-| **Database Connectivity** | JDBC | `mysql-connector-j` 8.3.0 (`PreparedStatement`, Transactions) |
-| **Presentation Tier** | JSP & JSTL | Jakarta Server Pages 3.1 & JSTL 3.0 |
+| **Database** | MySQL | MySQL 8.0+ (Strict fail-fast requirement, zero H2 fallback) |
+| **Database Connectivity** | JDBC | `mysql-connector-j` 8.3.0 (`PreparedStatement`, ACID Transactions) |
+| **Presentation Tier** | JSP & JSTL | Jakarta Server Pages 3.1 & JSTL 3.0 (with XML output escaping) |
 | **Frontend Framework** | Bootstrap 5 | Bootstrap 5.3.3 & Bootstrap Icons 1.11.3 |
 | **Visual Analytics** | Chart.js | Chart.js 4.4.1 (Doughnut & Bar charts) |
-| **Password Security** | BCrypt | OpenBSD Blowfish password hashing (cost factor 10) |
+| **Password & Token Security** | BCrypt & SecureRandom | OpenBSD Blowfish password hashing & cryptographic CSRF tokens |
 | **Build & Packaging Tool** | Apache Maven | Maven 3.9+ (Produces standard `protrack.war`) |
-| **Unit Testing** | JUnit 5 | JUnit Jupiter 5.10.2 |
+| **Automated Testing** | JUnit 5 & Mockito | 28 automated integration & unit tests (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
 
 ---
 
@@ -99,24 +99,23 @@ ProTrack strictly adheres to the industry-standard **Model-View-Controller (MVC)
 ### Directory Structure:
 ```
 protrack/
-├── pom.xml                               # Maven project configuration
-├── mvnw / mvnw.cmd                       # Embedded Maven wrapper
+├── pom.xml                               # Maven project configuration (dependencies & plugins)
+├── mvnw / mvnw.cmd                       # Maven wrapper scripts
 ├── database.sql                          # Database creation, schema & seed records
 ├── README.md                             # Comprehensive project documentation
-├── lib/                                  # Local compile-time dependencies
 ├── src/
 │   ├── main/
 │   │   ├── java/com/protrack/
 │   │   │   ├── exception/                # Custom business & database exceptions
-│   │   │   ├── util/                     # BCrypt, DBConnection, DateUtil, Validation
+│   │   │   ├── util/                     # BCrypt, DBConnection, CSRFTokenUtil, ValidationUtil
 │   │   │   ├── model/                    # Domain entities, OOP inheritance & enums
 │   │   │   ├── dao/                      # GenericDAO and entity DAO interfaces
 │   │   │   │   └── impl/                 # JDBC implementations with PreparedStatements
-│   │   │   ├── service/                  # Business logic, metrics & orchestration
-│   │   │   ├── filter/                   # EncodingFilter & AuthenticationFilter (RBAC)
+│   │   │   ├── service/                  # Business logic, metrics & ownership checks
+│   │   │   ├── filter/                   # EncodingFilter & AuthenticationFilter (RBAC + CSRF + Matrix guard)
 │   │   │   └── servlet/                  # Jakarta HTTP Servlets (Controllers)
 │   │   ├── resources/
-│   │   │   ├── db.properties             # Database connection credentials
+│   │   │   ├── db.properties             # Database connection credentials (env overrides supported)
 │   │   │   └── database.sql              # Packaged schema resource
 │   │   └── webapp/
 │   │       ├── index.jsp                 # Smart root landing / dispatcher
@@ -125,10 +124,9 @@ protrack/
 │   │       │   └── js/main.js            # Modals, client search, alerts & charts
 │   │       └── WEB-INF/
 │   │           ├── web.xml               # Deployment descriptor & error mappings
-│   │           ├── lib/                  # Runtime libraries for WAR bundle
-│   │           └── views/                # Protected JSP presentation templates
+│   │           └── views/                # Protected JSP presentation templates (XML-escaped)
 │   │               ├── common/           # Header, sidebar, navbar, footer, alerts
-│   │               ├── auth/             # Login and register pages
+│   │               ├── auth/             # Login and register pages (CSRF protected)
 │   │               ├── admin/            # Admin dashboard, users, projects, settings
 │   │               ├── manager/          # PM dashboard, projects, tasks, detail
 │   │               ├── member/           # Member dashboard, my tasks, projects
@@ -136,8 +134,15 @@ protrack/
 │   │               ├── profile.jsp       # User profile & password modification
 │   │               └── activity.jsp      # System audit trail and activity feed
 │   └── test/
-│       └── java/com/protrack/
-│           └── ProTrackUnitTest.java     # Automated JUnit 5 test suite
+│       ├── java/com/protrack/
+│       │   ├── dao/ProjectDAORollbackTest.java     # Atomic transaction rollback tests
+│       │   ├── filter/SecurityRBACAndAuthTest.java # RBAC, matrix URL bypass & CSRF tests
+│       │   ├── service/TaskAuthorizationTest.java  # Task ownership & status update tests
+│       │   ├── service/RegistrationSecurityTest.java # Role escalation & 8-char password tests
+│       │   ├── util/XSSSanitizationTest.java       # HTML/script injection neutralization tests
+│       │   └── ProTrackUnitTest.java               # Core unit tests (BCrypt, validation, enums)
+│       └── resources/
+│           └── mockito-extensions/                 # Java 21 compatible mock-maker-subclass
 ```
 
 ---
@@ -230,14 +235,17 @@ erDiagram
 | **Manage Users (CRUD, Role Assignment)** | :white_check_mark: Yes | :x: No | :x: No |
 | **Configure System Settings** | :white_check_mark: Yes | :x: No | :x: No |
 | **Create Projects** | :white_check_mark: Yes | :white_check_mark: Yes | :x: No |
-| **Edit / Delete Projects** | :white_check_mark: Yes | :white_check_mark: Yes (Own) | :x: No |
-| **Assign Members to Projects** | :white_check_mark: Yes | :white_check_mark: Yes | :x: No |
-| **Create & Assign Tasks** | :white_check_mark: Yes | :white_check_mark: Yes | :x: No |
-| **Edit / Delete Tasks** | :white_check_mark: Yes | :white_check_mark: Yes | :x: No |
+| **Edit / Delete Projects** | :white_check_mark: Yes | :white_check_mark: Yes (Managed projects only) | :x: No |
+| **Assign Members to Projects** | :white_check_mark: Yes | :white_check_mark: Yes (Managed projects only) | :x: No |
+| **Create Tasks** | :white_check_mark: Yes | :white_check_mark: Yes (Managed projects only) | :x: No (Blocked in Filter & Servlet) |
+| **Edit / Delete Tasks** | :white_check_mark: Yes | :white_check_mark: Yes (Managed projects only) | :x: No (Blocked in Filter & Servlet) |
 | **View Assigned Tasks** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes |
-| **Update Task Status (TODO &rarr; COMPLETED)** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes |
-| **Update Personal Profile & Password** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes |
+| **Update Task Status (TODO &rarr; COMPLETED)** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes (**Own assigned tasks only** - ownership verified) |
+| **Self-Registration Role Assignment** | N/A (Admin only) | :x: Prevented | :white_check_mark: Yes (Forced strictly to `TEAM_MEMBER`) |
+| **Update Personal Profile & Password** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes (Minimum 8 chars) |
 | **View Audit Trail Activity Feed** | :white_check_mark: Yes | :white_check_mark: Yes | :white_check_mark: Yes |
+
+> **Task Ownership Enforcement:** Even though `TaskServlet` handles status updates, backend business logic (`TaskService.updateTaskStatusWithRoleCheck`) cryptographically checks if the logged-in user is an Admin, the Project Manager of the project, or the exact `assignedTo` user. Team members cannot tamper with or update tasks belonging to other team members.
 
 ---
 
@@ -273,32 +281,44 @@ erDiagram
 ## 7. JDBC & Database Architecture Deep Dive
 
 1. **PreparedStatement Protection:**
-   - All queries use parameterized `?` placeholders. No string concatenation is used for user input, completely defeating SQL Injection attacks.
-2. **Connection Lifecycle & Singleton:**
-   - `DBConnection` centralizes driver loading and connection acquisition using `DriverManager`. It reads `db.properties` from classpath and gracefully supports environment variable overrides (`DB_URL`, `DB_USER`, `DB_PASSWORD`).
-3. **JDBC Transactions (ACID Support):**
-   - In `ProjectDAOImpl.saveWithMembers()`, multi-table atomic persistence is demonstrated:
+   - All queries use parameterized `?` placeholders. No dynamic SQL string concatenation is used for user input, completely defeating SQL Injection attacks.
+2. **Strict Fail-Fast MySQL Connectivity (Zero H2 Fallback):**
+   - `DBConnection` centralizes driver loading and connection pooling/acquisition using `DriverManager`. It reads `db.properties` from classpath and supports environment variable overrides (`DB_URL`, `DB_USER`, `DB_PASSWORD`, `DB_DRIVER`).
+   - To guarantee architectural integrity and prevent split-database corruption, **there is zero silent fallback to embedded databases (H2 removed)**. If MySQL is unreachable, `DBConnection` immediately and loudly throws a descriptive `SQLException` detailing the JDBC URL, host, and port.
+3. **JDBC Transactions (ACID Support) & Verified Rollback:**
+   - In `ProjectDAOImpl.saveWithMembers()`, multi-table atomic persistence is guaranteed:
      ```java
      conn.setAutoCommit(false);
-     // Insert project record -> retrieve generated project_id
-     // Batch insert project_members
-     conn.commit(); // Atomically committed
-     // in catch:
-     DBConnection.rollback(conn); // Rolled back on any failure
+     // 1. Insert project record -> retrieve generated project_id
+     // 2. Batch insert project_members
+     conn.commit(); // Atomically committed upon total success
+     // In catch block:
+     DBConnection.rollback(conn); // Rolled back on any batch failure
+     conn.setAutoCommit(true);    // Connection state cleanly restored
      ```
+   - This transaction rollback behavior is covered by automated unit & integration tests (`ProjectDAORollbackTest`), verifying that failure at any point restores database consistency.
 
 ---
 
 ## 8. Servlet & Filter Implementation Details
 
-1. **Servlet Filter Pipeline:**
+1. **Servlet Filter Pipeline & Security Guards:**
    - `EncodingFilter`: Intercepts `/*` and sets `UTF-8` character encoding for all requests and responses.
-   - `AuthenticationFilter`: Enforces session validation on all protected paths. Inspects `currentUser.getRole()` to prevent users from tampering with browser URLs (e.g., team members attempting to access `/admin/users` receive a custom 403 Forbidden page).
-2. **Session Management:**
+   - `AuthenticationFilter`:
+     - **Matrix URL Parameter Defense:** Strips semicolon matrix parameters (`path.substring(0, semi)`) from incoming request paths before evaluating authorization rules. A malicious URL like `/manager/tasks;x=.css` cannot bypass authentication filters.
+     - **Path-Based Whitelisting:** Public endpoints (`/login`, `/register`, `/logout`) and static assets strictly within `/assets/*` are permitted. All application URLs (`/admin/*`, `/manager/*`, `/member/*`, `/profile`, `/tasks`, `/projects`) require active session authentication and appropriate role permissions. Mismatches return HTTP 403 Forbidden.
+     - **CSRF Token Validation:** All state-changing `POST` requests are validated against the cryptographically secure per-session token generated by `CSRFTokenUtil`. Requests with missing or mismatched tokens are rejected immediately with HTTP 403 Forbidden.
+2. **Session Management & Session Fixation Defense:**
    - `request.getSession(true)` initializes authenticated user state.
+   - **Session Fixation Prevention:** Upon successful credential validation, `LoginServlet` invokes `request.changeSessionId()`, rotating the session ID while preserving session state to defeat session hijacking attacks.
    - Session timeout set to 30 minutes in `web.xml`.
-   - `session.invalidate()` ensures secure logout.
+   - `session.invalidate()` cleanly flushes session state on logout.
    - Flash message pattern: One-time notification banners stored in session and automatically cleared upon rendering.
+3. **Input Sanitization & Context-Aware XSS Escaping:**
+   - **Input Sanitization:** User inputs submitted via forms are stripped of hazardous `<script>`, `<iframe>`, and `javascript:` payloads in `ValidationUtil.sanitize()` before being persisted.
+   - **Output Escaping in JSPs:** All dynamic user-supplied data across all 15 JSPs is escaped using `ValidationUtil.escapeXml()` (converting `<`, `>`, `&`, `"`, `'` to safe XML entities), completely neutralizing cross-site scripting vulnerabilities.
+4. **Strong Password Policy:**
+   - Password minimum length is strictly enforced to at least 8 characters across frontend HTML5 validators, `ValidationUtil.isStrongPassword()`, and backend service layers.
 
 ---
 
@@ -344,7 +364,7 @@ db.password=your_mysql_password
 ### Step 3: Automated Database Verification (Optional)
 Run the built-in database initializer to test connectivity:
 ```bash
-java -cp target/classes:lib/* com.protrack.util.DatabaseInitializer
+./mvnw test-compile exec:java -Dexec.mainClass="com.protrack.util.DatabaseInitializer"
 ```
 
 ### Step 4: Build the Project with Maven
@@ -396,22 +416,46 @@ target/protrack.war
 
 ## 12. Testing & Quality Assurance Checklist
 
-You can verify all unit tests at any time using:
+ProTrack includes an extensive automated test suite built on **JUnit 5 (Jupiter)** and **Mockito 5**. All tests run completely offline and independent of external database state via mock drivers and isolated unit logic.
+
+Execute the entire test suite using:
 ```bash
 ./mvnw test
 ```
 
+### Automated Test Suite Overview (28 Tests — 100% Passing):
+
+| Test Suite Class | Tests | Category | Key Assertions & Scenarios Verified |
+| :--- | :---: | :--- | :--- |
+| **`ProjectDAORollbackTest`** | 2 | JDBC Integration | • Atomic rollback on batch failure (`conn.rollback()`, `autoCommit` restoration, `DatabaseOperationException` thrown)<br>• Clean commit on valid project and member batch insertion |
+| **`SecurityRBACAndAuthTest`** | 7 | Security & Filters | • Unauthenticated requests safely redirected to `/login`<br>• Semicolon matrix parameter auth bypass neutralized (`/manager/tasks;x=.css` denied)<br>• RBAC role mismatch returns HTTP 403 Forbidden<br>• Static asset whitelist (`/assets/*`) bypasses auth without risk<br>• Missing CSRF token on POST yields HTTP 403<br>• Invalid CSRF token on POST yields HTTP 403<br>• Valid session CSRF token on POST passes filter successfully |
+| **`TaskAuthorizationTest`** | 4 | Service & Auth | • Team members can update status on tasks assigned directly to their `userId`<br>• Team members denied with `UnauthorizedAccessException` when attempting to alter unassigned tasks<br>• Team members denied when attempting to alter other team members' tasks<br>• Administrators can update status of any task across all projects |
+| **`RegistrationSecurityTest`** | 5 | Service & Validation | • Passwords shorter than 8 characters strictly rejected<br>• Names containing `<script>alert(1)</script>` sanitized before persistence<br>• Role escalation prevented: public registrations forced strictly to `Role.TEAM_MEMBER`<br>• Duplicate email registrations rejected with `AppException`<br>• Registration policy check rejects signups when registration is disabled in settings |
+| **`XSSSanitizationTest`** | 4 | Security Utilities | • Neutralizes dangerous `<script>` and `javascript:` payloads in input fields<br>• Neutralizes HTML attribute breakout attacks (`"><img src=x onerror=...`)<br>• `escapeXml` converts `&`, `<`, `>`, `"`, `'` to safe XML entities for JSP output<br>• Gracefully handles `null` and empty string inputs |
+| **`ProTrackUnitTest`** | 6 | Core Unit Tests | • BCrypt salt generation and password verification<br>• Rejection of passwords with insufficient length (< 8 chars)<br>• Email format regex validation<br>• Date calculations and overdue detection<br>• TaskStatus and Priority enum display mappings<br>• Polymorphic role capability checks on concrete `User` subtypes |
+
+```
+[INFO] Results:
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
 ### Functional Verification Matrix:
-- [x] **Authentication:** Login with valid credentials redirects to role-specific dashboard.
-- [x] **Password Security:** BCrypt password hashing verified; plain-text passwords are never stored.
+- [x] **Authentication & Session Fixation:** Login with valid credentials invokes `request.changeSessionId()` and redirects to role-specific dashboard.
+- [x] **CSRF Protection:** Per-session cryptographic token required on every state-changing POST form.
+- [x] **URL Matrix Parameter Defense:** Semicolon path parameters (`/manager/tasks;x=.css`) stripped and blocked from filter bypass.
 - [x] **Role Authorization:** Accessing `/admin/users` as a Team Member produces a 403 Forbidden page.
+- [x] **Task Ownership Enforcement:** Team members can only update status of their own assigned tasks.
+- [x] **Role Escalation Prevention:** Public registration form forced strictly to `Role.TEAM_MEMBER`.
+- [x] **Password Security:** BCrypt Blowfish hashing with 8-character minimum policy verified; plain-text passwords are never stored.
+- [x] **Zero H2 Fallback:** `DBConnection` strictly enforces MySQL with loud `SQLException` on failure.
+- [x] **Atomic Transactions:** Project batch persistence verified with automated rollback on failure.
 - [x] **User Management:** Admin can add, search, edit, and delete user accounts.
 - [x] **Project Management:** Project creation with manager assignment and member selection succeeds.
-- [x] **Task Progression:** Team members can update task status (TODO &rarr; IN PROGRESS &rarr; REVIEW &rarr; COMPLETED).
 - [x] **Live Calculations:** Project completion percentages recalculate dynamically upon task completion.
-- [x] **Deadline Alerts:** Overdue and Due Today tasks trigger warning banners.
+- [x] **Deadline Alerts:** Overdue and Due Today tasks trigger warning badges.
 - [x] **Audit Trail:** Modifying a task or project creates an entry in `activity_logs`.
-- [x] **XSS Protection:** Input sanitization neutralizes HTML/script injection attempts.
+- [x] **XSS Protection:** Input sanitization + XML entity escaping across all 15 JSPs.
 
 ---
 

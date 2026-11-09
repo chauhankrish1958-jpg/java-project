@@ -6,6 +6,7 @@
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.model.TaskPriority" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "Admin Dashboard");
     request.setAttribute("pageSubtitle", "System overview, active project lifecycles and performance analytics");
@@ -193,12 +194,12 @@
                                     <tr>
                                         <td>
                                             <a href="<%= request.getContextPath() %>/admin/projects?action=view&id=<%= p.getId() %>" class="fw-semibold text-dark text-decoration-none">
-                                                <%= p.getTitle() %>
+                                                <%= ValidationUtil.escapeXml(p.getTitle()) %>
                                             </a>
                                             <div class="small text-muted"><%= p.getTotalTasks() %> total tasks</div>
                                         </td>
                                         <td>
-                                            <span class="small fw-medium"><%= p.getManagerName() != null ? p.getManagerName() : "Unassigned" %></span>
+                                            <span class="small fw-medium"><%= p.getManagerName() != null ? ValidationUtil.escapeXml(p.getManagerName()) : "Unassigned" %></span>
                                         </td>
                                         <td>
                                             <span class="badge badge-custom <%= p.getStatusBadgeClass() %>">
@@ -226,7 +227,7 @@
                                    } else { %>
                                     <tr>
                                         <td colspan="6" class="text-center py-4 text-muted">No projects found in database.</td>
-                                    </tr>
+                                     </tr>
                                 <% } %>
                             </tbody>
                         </table>
@@ -252,10 +253,10 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-title"><%= act.getDetails() %></div>
+                                    <div class="timeline-title"><%= ValidationUtil.escapeXml(act.getDetails()) %></div>
                                     <div class="timeline-time">
                                         <i class="bi bi-clock me-1"></i><%= act.getFormattedCreatedAt() %> &bull;
-                                        <strong><%= act.getUserName() != null ? act.getUserName() : "System" %></strong>
+                                        <strong><%= act.getUserName() != null ? ValidationUtil.escapeXml(act.getUserName()) : "System" %></strong>
                                     </div>
                                 </div>
                             </div>

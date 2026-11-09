@@ -2,6 +2,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "System Activity Feed");
     request.setAttribute("pageSubtitle", "Chronological audit trail of project governance, task transitions and user events");
@@ -35,18 +36,18 @@
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge bg-light text-dark border font-monospace small"><%= act.getAction() %></span>
+                                <span class="badge bg-light text-dark border font-monospace small"><%= ValidationUtil.escapeXml(act.getAction()) %></span>
                                 <span class="small text-muted"><i class="bi bi-calendar3 me-1"></i><%= act.getFormattedCreatedAt() %></span>
                             </div>
-                            <div class="timeline-title text-dark fs-6 mb-1"><%= act.getDetails() %></div>
+                            <div class="timeline-title text-dark fs-6 mb-1"><%= ValidationUtil.escapeXml(act.getDetails()) %></div>
                             <div class="timeline-time">
                                 <i class="bi bi-person-circle me-1 text-primary"></i>
-                                Triggered by <strong><%= act.getUserName() != null ? act.getUserName() : "System" %></strong>
+                                Triggered by <strong><%= act.getUserName() != null ? ValidationUtil.escapeXml(act.getUserName()) : "System" %></strong>
                                 <% if (act.getUserRole() != null) { %>
                                     (<span class="text-secondary"><%= act.getUserRole().getDisplayName() %></span>)
                                 <% } %>
                                 <% if (act.getEntityType() != null) { %>
-                                    &bull; Target Entity: <span class="badge bg-light text-secondary border"><%= act.getEntityType() %> #<%= act.getEntityId() != null ? act.getEntityId() : "" %></span>
+                                    &bull; Target Entity: <span class="badge bg-light text-secondary border"><%= ValidationUtil.escapeXml(act.getEntityType()) %> #<%= act.getEntityId() != null ? act.getEntityId() : "" %></span>
                                 <% } %>
                             </div>
                         </div>

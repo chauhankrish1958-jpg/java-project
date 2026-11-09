@@ -6,6 +6,7 @@
 <%@ page import="com.protrack.model.TaskStatus" %>
 <%@ page import="com.protrack.model.TaskPriority" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     request.setAttribute("pageTitle", "Task Management");
     request.setAttribute("pageSubtitle", "Assign deliverables to team members, adjust priorities and track deadlines");
@@ -42,7 +43,7 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control table-search-input" data-target="mgrTasksTable"
-                                   name="q" value="<%= searchQuery != null ? searchQuery : "" %>"
+                                   name="q" value="<%= searchQuery != null ? ValidationUtil.escapeXml(searchQuery) : "" %>"
                                    placeholder="Search task title...">
                         </div>
                     </div>
@@ -52,7 +53,7 @@
                             <% if (projects != null) {
                                 for (Project p : projects) { %>
                                 <option value="<%= p.getId() %>" <%= p.getId() == selectedProject ? "selected" : "" %>>
-                                    <%= p.getTitle() %>
+                                    <%= ValidationUtil.escapeXml(p.getTitle()) %>
                                 </option>
                             <%  }
                                } %>
@@ -64,7 +65,7 @@
                             <% if (teamMembers != null) {
                                 for (User u : teamMembers) { %>
                                 <option value="<%= u.getId() %>" <%= u.getId() == selectedAssignee ? "selected" : "" %>>
-                                    <%= u.getFullName() %>
+                                    <%= ValidationUtil.escapeXml(u.getFullName()) %>
                                 </option>
                             <%  }
                                } %>
@@ -126,19 +127,19 @@
                             <tr>
                                 <td class="text-muted fw-semibold">#<%= t.getId() %></td>
                                 <td>
-                                    <div class="fw-semibold text-dark"><%= t.getTaskTitle() %></div>
-                                    <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? t.getDescription() : "" %></div>
+                                    <div class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(t.getTaskTitle()) %></div>
+                                    <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? ValidationUtil.escapeXml(t.getDescription()) : "" %></div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border text-truncate" style="max-width: 180px;"><%= t.getProjectName() %></span>
+                                    <span class="badge bg-light text-dark border text-truncate" style="max-width: 180px;"><%= ValidationUtil.escapeXml(t.getProjectName()) %></span>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="rounded-circle bg-light border text-secondary fw-semibold d-flex align-items-center justify-content-center me-2"
                                              style="width: 28px; height: 28px; font-size: 0.75rem;">
-                                            <%= t.getAssignedToName() != null && !t.getAssignedToName().isEmpty() ? t.getAssignedToName().substring(0, 1).toUpperCase() : "?" %>
+                                            <%= t.getAssignedToName() != null && !t.getAssignedToName().isEmpty() ? ValidationUtil.escapeXml(t.getAssignedToName().substring(0, 1).toUpperCase()) : "?" %>
                                         </div>
-                                        <span class="small fw-medium text-dark"><%= t.getAssignedToName() != null ? t.getAssignedToName() : "Unassigned" %></span>
+                                        <span class="small fw-medium text-dark"><%= t.getAssignedToName() != null ? ValidationUtil.escapeXml(t.getAssignedToName()) : "Unassigned" %></span>
                                     </div>
                                 </td>
                                 <td>
@@ -164,8 +165,8 @@
                                         <button type="button" class="btn btn-outline-custom" title="Edit Task"
                                                 data-bs-toggle="modal" data-bs-target="#editTaskModal"
                                                 data-id="<%= t.getId() %>"
-                                                data-title="<%= t.getTaskTitle() %>"
-                                                data-desc="<%= t.getDescription() != null ? t.getDescription() : "" %>"
+                                                data-title="<%= ValidationUtil.escapeXml(t.getTaskTitle()) %>"
+                                                data-desc="<%= t.getDescription() != null ? ValidationUtil.escapeXml(t.getDescription()) : "" %>"
                                                 data-project="<%= t.getProjectId() %>"
                                                 data-assigned="<%= t.getAssignedTo() != null ? t.getAssignedTo() : "" %>"
                                                 data-priority="<%= t.getPriority().name() %>"
@@ -177,7 +178,7 @@
                                         <button type="button" class="btn btn-outline-custom" title="Delete Task"
                                                 data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
                                                 data-id="<%= t.getId() %>"
-                                                data-name="<%= t.getTaskTitle() %>"
+                                                data-name="<%= ValidationUtil.escapeXml(t.getTaskTitle()) %>"
                                                 data-action="<%= request.getContextPath() %>/manager/tasks">
                                             <i class="bi bi-trash3 text-danger"></i>
                                         </button>
@@ -207,6 +208,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/manager/tasks" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold" id="createTaskModalLabel"><i class="bi bi-plus-circle text-primary me-2"></i>Create New Task</h5>
@@ -228,7 +230,7 @@
                                 <option value="" disabled selected>-- Select Project --</option>
                                 <% if (projects != null) {
                                     for (Project p : projects) { %>
-                                    <option value="<%= p.getId() %>"><%= p.getTitle() %></option>
+                                    <option value="<%= p.getId() %>"><%= ValidationUtil.escapeXml(p.getTitle()) %></option>
                                 <%  }
                                    } %>
                             </select>
@@ -239,7 +241,7 @@
                                 <option value="">-- Unassigned --</option>
                                 <% if (teamMembers != null) {
                                     for (User tm : teamMembers) { %>
-                                    <option value="<%= tm.getId() %>"><%= tm.getFullName() %> (<%= tm.getEmail() %>)</option>
+                                    <option value="<%= tm.getId() %>"><%= ValidationUtil.escapeXml(tm.getFullName()) %> (<%= ValidationUtil.escapeXml(tm.getEmail()) %>)</option>
                                 <%  }
                                    } %>
                             </select>
@@ -292,6 +294,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <form action="<%= request.getContextPath() %>/manager/tasks" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" id="editTaskId" name="taskId" value="">
                 <div class="modal-header bg-light">
@@ -313,7 +316,7 @@
                             <select class="form-select" id="editTaskProject" name="projectId" required>
                                 <% if (projects != null) {
                                     for (Project p : projects) { %>
-                                    <option value="<%= p.getId() %>"><%= p.getTitle() %></option>
+                                    <option value="<%= p.getId() %>"><%= ValidationUtil.escapeXml(p.getTitle()) %></option>
                                 <%  }
                                    } %>
                             </select>
@@ -324,7 +327,7 @@
                                 <option value="">-- Unassigned --</option>
                                 <% if (teamMembers != null) {
                                     for (User tm : teamMembers) { %>
-                                    <option value="<%= tm.getId() %>"><%= tm.getFullName() %> (<%= tm.getEmail() %>)</option>
+                                    <option value="<%= tm.getId() %>"><%= ValidationUtil.escapeXml(tm.getFullName()) %> (<%= ValidationUtil.escapeXml(tm.getEmail()) %>)</option>
                                 <%  }
                                    } %>
                             </select>
@@ -377,6 +380,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow">
             <form id="deleteForm" action="<%= request.getContextPath() %>/manager/tasks" method="POST">
+                <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="taskId" value="">
                 <div class="modal-body p-4 text-center">

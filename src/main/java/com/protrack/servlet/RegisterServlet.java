@@ -30,11 +30,10 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String fullName = request.getParameter("fullName");
-        String email = request.getParameter("email");
+        String fullName = com.protrack.util.ValidationUtil.sanitize(request.getParameter("fullName"));
+        String email = request.getParameter("email") != null ? request.getParameter("email").trim().toLowerCase() : "";
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
-        String roleStr = request.getParameter("role");
 
         if (password == null || !password.equals(confirmPassword)) {
             request.setAttribute("errorMessage", "Passwords do not match.");
@@ -44,14 +43,17 @@ public class RegisterServlet extends HttpServlet {
             return;
         }
 
-        Role role = Role.TEAM_MEMBER;
-        if (roleStr != null && !roleStr.trim().isEmpty()) {
-            Role requestedRole = Role.fromString(roleStr);
-            // Non-admin registrants can register as TEAM_MEMBER or PROJECT_MANAGER
-            if (requestedRole != Role.ADMIN) {
-                role = requestedRole;
-            }
+        if (!com.protrack.util.ValidationUtil.isStrongPassword(password)) {
+            request.setAttribute("errorMessage", "Password must be at least 8 characters long.");
+            request.setAttribute("fullName", fullName);
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("/WEB-INF/views/auth/register.jsp").forward(request, response);
+            return;
         }
+
+        // Security: Public self-registration ALWAYS defaults to TEAM_MEMBER.
+        // Project Manager and Administrator roles can only be granted by Administrators.
+        Role role = Role.TEAM_MEMBER;
 
         try {
             User registered = authService.register(fullName, email, password, role);

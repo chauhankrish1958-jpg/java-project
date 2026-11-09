@@ -4,6 +4,7 @@
 <%@ page import="com.protrack.model.Task" %>
 <%@ page import="com.protrack.model.User" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     Project project = (Project) request.getAttribute("project");
     @SuppressWarnings("unchecked")
@@ -13,7 +14,7 @@
     @SuppressWarnings("unchecked")
     List<User> allTeamMembers = (List<User>) request.getAttribute("allTeamMembers");
 
-    request.setAttribute("pageTitle", project != null ? project.getTitle() : "Project Workspace");
+    request.setAttribute("pageTitle", project != null ? ValidationUtil.escapeXml(project.getTitle()) : "Project Workspace");
     request.setAttribute("pageSubtitle", "Deep dive into project milestones, team allocations and task execution");
     request.setAttribute("activeMenu", "admin-projects");
 %>
@@ -39,8 +40,8 @@
                             </span>
                             <span class="text-muted small">Project ID: #<%= project.getId() %></span>
                         </div>
-                        <h2 class="fw-bold text-dark mb-2"><%= project.getTitle() %></h2>
-                        <p class="text-secondary mb-0"><%= project.getDescription() != null ? project.getDescription() : "No detailed description provided." %></p>
+                        <h2 class="fw-bold text-dark mb-2"><%= ValidationUtil.escapeXml(project.getTitle()) %></h2>
+                        <p class="text-secondary mb-0"><%= project.getDescription() != null ? ValidationUtil.escapeXml(project.getDescription()) : "No detailed description provided." %></p>
                     </div>
                     <div class="d-flex gap-2">
                         <a href="<%= request.getContextPath() %>/admin/projects" class="btn btn-outline-custom">
@@ -57,8 +58,8 @@
                 <div class="row g-3 text-secondary small">
                     <div class="col-sm-6 col-lg-3">
                         <div class="text-muted mb-1"><i class="bi bi-person-badge text-primary me-1"></i> Project Manager</div>
-                        <span class="fw-semibold text-dark fs-6"><%= project.getManagerName() != null ? project.getManagerName() : "Unassigned" %></span>
-                        <div class="text-muted"><%= project.getManagerEmail() != null ? project.getManagerEmail() : "" %></div>
+                        <span class="fw-semibold text-dark fs-6"><%= project.getManagerName() != null ? ValidationUtil.escapeXml(project.getManagerName()) : "Unassigned" %></span>
+                        <div class="text-muted"><%= project.getManagerEmail() != null ? ValidationUtil.escapeXml(project.getManagerEmail()) : "" %></div>
                     </div>
                     <div class="col-sm-6 col-lg-3">
                         <div class="text-muted mb-1"><i class="bi bi-calendar3 text-primary me-1"></i> Timeline</div>
@@ -108,11 +109,11 @@
                                     for (Task t : tasks) { %>
                                     <tr>
                                         <td>
-                                            <div class="fw-semibold text-dark"><%= t.getTaskTitle() %></div>
-                                            <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? t.getDescription() : "" %></div>
+                                            <div class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(t.getTaskTitle()) %></div>
+                                            <div class="small text-muted text-truncate" style="max-width: 250px;"><%= t.getDescription() != null ? ValidationUtil.escapeXml(t.getDescription()) : "" %></div>
                                         </td>
                                         <td>
-                                            <span class="small fw-medium text-dark"><%= t.getAssignedToName() != null ? t.getAssignedToName() : "Unassigned" %></span>
+                                            <span class="small fw-medium text-dark"><%= t.getAssignedToName() != null ? ValidationUtil.escapeXml(t.getAssignedToName()) : "Unassigned" %></span>
                                         </td>
                                         <td>
                                             <span class="badge badge-custom <%= t.getPriority().getBadgeClass() %>">
@@ -164,14 +165,15 @@
                                     <div class="d-flex align-items-center">
                                         <div class="rounded-circle bg-light text-primary border fw-bold d-flex align-items-center justify-content-center me-3"
                                              style="width: 36px; height: 36px; font-size: 0.85rem;">
-                                            <%= m.getFullName() != null && !m.getFullName().isEmpty() ? m.getFullName().substring(0, 1).toUpperCase() : "U" %>
+                                             <%= m.getFullName() != null && !m.getFullName().isEmpty() ? ValidationUtil.escapeXml(m.getFullName().substring(0, 1).toUpperCase()) : "U" %>
                                         </div>
                                         <div>
-                                            <div class="fw-semibold text-dark"><%= m.getFullName() %></div>
-                                            <div class="small text-muted"><%= m.getEmail() %></div>
+                                            <div class="fw-semibold text-dark"><%= ValidationUtil.escapeXml(m.getFullName()) %></div>
+                                            <div class="small text-muted"><%= ValidationUtil.escapeXml(m.getEmail()) %></div>
                                         </div>
                                     </div>
-                                    <form action="<%= request.getContextPath() %>/admin/projects" method="POST" onsubmit="return confirm('Remove <%= m.getFullName() %> from this project?');">
+                                    <form action="<%= request.getContextPath() %>/admin/projects" method="POST" onsubmit="return confirm('Remove <%= ValidationUtil.escapeXml(m.getFullName()) %> from this project?');">
+                                        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                                         <input type="hidden" name="action" value="removeMember">
                                         <input type="hidden" name="projectId" value="<%= project.getId() %>">
                                         <input type="hidden" name="userId" value="<%= m.getId() %>">
@@ -197,6 +199,7 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
                     <form action="<%= request.getContextPath() %>/admin/projects" method="POST">
+                        <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                         <input type="hidden" name="action" value="assignMember">
                         <input type="hidden" name="projectId" value="<%= project.getId() %>">
                         <div class="modal-header bg-light">
@@ -209,7 +212,7 @@
                                 <option value="" disabled selected>-- Choose member --</option>
                                 <% if (allTeamMembers != null) {
                                     for (User u : allTeamMembers) { %>
-                                    <option value="<%= u.getId() %>"><%= u.getFullName() %> (<%= u.getEmail() %>)</option>
+                                    <option value="<%= u.getId() %>"><%= ValidationUtil.escapeXml(u.getFullName()) %> (<%= ValidationUtil.escapeXml(u.getEmail()) %>)</option>
                                 <%  }
                                    } %>
                             </select>

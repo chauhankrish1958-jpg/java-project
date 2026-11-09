@@ -3,6 +3,7 @@
 <%@ page import="com.protrack.model.User" %>
 <%@ page import="com.protrack.model.ActivityLog" %>
 <%@ page import="com.protrack.util.DateUtil" %>
+<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
     User profileUser = (User) session.getAttribute("currentUser");
     request.setAttribute("pageTitle", "User Profile");
@@ -30,10 +31,10 @@
                     <div class="protrack-card-body p-4 text-center">
                         <div class="rounded-circle bg-primary text-white fw-bold d-inline-flex align-items-center justify-content-center mb-3"
                              style="width: 72px; height: 72px; font-size: 1.8rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">
-                            <%= profileUser != null && !profileUser.getFullName().isEmpty() ? profileUser.getFullName().substring(0, 1).toUpperCase() : "U" %>
+                            <%= profileUser != null && !profileUser.getFullName().isEmpty() ? ValidationUtil.escapeXml(profileUser.getFullName().substring(0, 1).toUpperCase()) : "U" %>
                         </div>
-                        <h4 class="fw-bold text-dark mb-1"><%= profileUser != null ? profileUser.getFullName() : "" %></h4>
-                        <div class="text-secondary small mb-2"><%= profileUser != null ? profileUser.getEmail() : "" %></div>
+                        <h4 class="fw-bold text-dark mb-1"><%= profileUser != null ? ValidationUtil.escapeXml(profileUser.getFullName()) : "" %></h4>
+                        <div class="text-secondary small mb-2"><%= profileUser != null ? ValidationUtil.escapeXml(profileUser.getEmail()) : "" %></div>
                         <span class="badge badge-custom badge-role-<%= profileUser != null ? profileUser.getRole().name() : "" %>">
                             <i class="bi bi-shield-check"></i> <%= profileUser != null ? profileUser.getRole().getDisplayName() : "" %>
                         </span>
@@ -53,16 +54,17 @@
                     </div>
                     <div class="protrack-card-body p-4">
                         <form action="<%= request.getContextPath() %>/profile" method="POST">
+                            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                             <input type="hidden" name="action" value="updateProfile">
                             <div class="mb-3">
                                 <label for="profName" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="profName" name="fullName"
-                                       value="<%= profileUser != null ? profileUser.getFullName() : "" %>" required>
+                                       value="<%= profileUser != null ? ValidationUtil.escapeXml(profileUser.getFullName()) : "" %>" required>
                             </div>
                             <div class="mb-3">
                                 <label for="profEmail" class="form-label">Email Address</label>
                                 <input type="email" class="form-control" id="profEmail" name="email"
-                                       value="<%= profileUser != null ? profileUser.getEmail() : "" %>" required>
+                                       value="<%= profileUser != null ? ValidationUtil.escapeXml(profileUser.getEmail()) : "" %>" required>
                             </div>
                             <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary">
@@ -85,6 +87,7 @@
                     </div>
                     <div class="protrack-card-body p-4">
                         <form action="<%= request.getContextPath() %>/profile" method="POST">
+                            <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
                             <input type="hidden" name="action" value="changePassword">
                             <div class="mb-3">
                                 <label for="currPass" class="form-label">Current Password</label>
@@ -92,11 +95,11 @@
                             </div>
                             <div class="mb-3">
                                 <label for="newPass" class="form-label">New Password</label>
-                                <input type="password" class="form-control" id="newPass" name="newPassword" minlength="6" placeholder="Min 6 characters" required>
+                                <input type="password" class="form-control" id="newPass" name="newPassword" minlength="8" placeholder="Min 8 characters" required>
                             </div>
                             <div class="mb-4">
                                 <label for="confPass" class="form-label">Confirm New Password</label>
-                                <input type="password" class="form-control" id="confPass" name="confirmPassword" minlength="6" required>
+                                <input type="password" class="form-control" id="confPass" name="confirmPassword" minlength="8" required>
                             </div>
                             <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary">
@@ -121,7 +124,7 @@
                             <div class="timeline-item">
                                 <div class="timeline-marker"></div>
                                 <div class="timeline-content">
-                                    <div class="timeline-title"><%= act.getDetails() %></div>
+                                    <div class="timeline-title"><%= ValidationUtil.escapeXml(act.getDetails()) %></div>
                                     <div class="timeline-time">
                                         <i class="bi bi-clock me-1"></i><%= act.getFormattedCreatedAt() %>
                                     </div>
