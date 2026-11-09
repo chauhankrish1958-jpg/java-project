@@ -1,33 +1,34 @@
 package com.protrack.util;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
 /**
- * Database Connection Manager for ProTrack.
- * Demonstrates singleton pattern, JDBC connection lifecycle management,
- * configuration loading via db.properties, environment variable overrides,
- * safe resource closure, and loud, explicit failure on MySQL unavailability.
+ * Database Connection Manager for ProTrack using HikariCP Connection Pooling.
+ * Demonstrates singleton DataSource lifecycle management, configuration loading
+ * via db.properties and environment variables, safe resource closure,
+ * connection pooling sizing, and loud, fail-fast SQLException on MySQL unavailability.
  */
 public class DBConnection {
 
+    private static HikariDataSource dataSource;
     private static String jdbcUrl;
     private static String jdbcUser;
     private static String jdbcPassword;
     private static String jdbcDriver;
+    private static int initialSize = 5;
+    private static int maxTotal = 20;
     private static boolean isInitialized = false;
     private static String initializationError = null;
 
-    static {
-        init();
-    }
-
-    private static synchronized void init() {
+    private static synchronized void initConfig() {
         if (isInitialized) return;
 
         Properties props = new Properties();
@@ -61,6 +62,18 @@ public class DBConnection {
         }
 
         try {
+            initialSize = Integer.parseInt(props.getProperty("db.initialSize", "5"));
+        } catch (NumberFormatException ignored) {
+            initialSize = 5;
+        }
+
+        try {
+            maxTotal = Integer.parseInt(props.getProperty("db.maxTotal", "20"));
+        } catch (NumberFormatException ignored) {
+            maxTotal = 20;
+        }
+
+        try {
             Class.forName(jdbcDriver);
             isInitialized = true;
             initializationError = null;
@@ -71,24 +84,59 @@ public class DBConnection {
         }
     }
 
-    /**
-     * Obtains a live JDBC Connection to the configured MySQL database.
-     * Fails loudly with an explicit, descriptive SQLException if MySQL is unreachable.
-     *
-     * @return java.sql.Connection
-     * @throws SQLException if connection fails
-     */
-    public static Connection getConnection() throws SQLException {
+    private static synchronized void ensureDataSourceInitialized() throws SQLException {
         if (!isInitialized) {
-            init();
+            initConfig();
         }
 
         if (initializationError != null) {
             throw new SQLException(initializationError);
         }
 
+        if (dataSource == null || dataSource.isClosed()) {
+            try {
+                HikariConfig config = new HikariConfig();
+                config.setDriverClassName(jdbcDriver);
+                config.setJdbcUrl(jdbcUrl);
+                config.setUsername(jdbcUser);
+                config.setPassword(jdbcPassword);
+                config.setMinimumIdle(initialSize);
+                config.setMaximumPoolSize(maxTotal);
+                config.setPoolName("ProTrackHikariPool");
+
+                // Fail-fast timeout configuration: 3 seconds connection timeout
+                config.setConnectionTimeout(3000L);
+                config.setValidationTimeout(2000L);
+                config.setIdleTimeout(600000L);
+                config.setMaxLifetime(1800000L);
+                config.setInitializationFailTimeout(1L);
+
+                dataSource = new HikariDataSource(config);
+                System.out.println("[DBConnection] HikariCP Connection Pool initialized (minIdle=" + initialSize + ", maxPool=" + maxTotal + ")");
+            } catch (Exception e) {
+                String errorMsg = String.format(
+                    "Failed to connect to MySQL database at [%s] with user [%s]. " +
+                    "Ensure MySQL Server is running on localhost:3306 and schema 'project_management_db' " +
+                    "is initialized via database.sql. Underlying cause: %s",
+                    jdbcUrl, jdbcUser, e.getMessage()
+                );
+                System.err.println("[DBConnection] " + errorMsg);
+                throw new SQLException(errorMsg, e);
+            }
+        }
+    }
+
+    /**
+     * Obtains a live JDBC Connection from the HikariCP connection pool.
+     * Fails loudly with an explicit, descriptive SQLException if MySQL is unreachable.
+     *
+     * @return java.sql.Connection
+     * @throws SQLException if connection fails
+     */
+    public static Connection getConnection() throws SQLException {
+        ensureDataSourceInitialized();
         try {
-            return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
+            return dataSource.getConnection();
         } catch (SQLException e) {
             String errorMsg = String.format(
                 "Failed to connect to MySQL database at [%s] with user [%s]. " +
@@ -98,6 +146,18 @@ public class DBConnection {
             );
             System.err.println("[DBConnection] " + errorMsg);
             throw new SQLException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Safely closes the HikariCP connection pool upon application shutdown.
+     */
+    public static synchronized void closePool() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            dataSource = null;
+            isInitialized = false;
+            System.out.println("[DBConnection] HikariCP Connection Pool closed successfully.");
         }
     }
 

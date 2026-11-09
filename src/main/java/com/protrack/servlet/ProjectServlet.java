@@ -188,11 +188,21 @@ public class ProjectServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "create" -> {
+                 case "create" -> {
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
-                    Date startDate = DateUtil.parseSqlDate(request.getParameter("startDate"));
-                    Date endDate = DateUtil.parseSqlDate(request.getParameter("endDate"));
+                    String startDateParam = request.getParameter("startDate");
+                    String endDateParam = request.getParameter("endDate");
+                    Date startDate = DateUtil.parseSqlDate(startDateParam);
+                    Date endDate = DateUtil.parseSqlDate(endDateParam);
+
+                    if (startDateParam != null && !startDateParam.trim().isEmpty() && startDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+                    if (endDateParam != null && !endDateParam.trim().isEmpty() && endDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+
                     String status = request.getParameter("status");
 
                     int managerId;
@@ -226,8 +236,18 @@ public class ProjectServlet extends HttpServlet {
 
                     String title = request.getParameter("title");
                     String description = request.getParameter("description");
-                    Date startDate = DateUtil.parseSqlDate(request.getParameter("startDate"));
-                    Date endDate = DateUtil.parseSqlDate(request.getParameter("endDate"));
+                    String startDateParam = request.getParameter("startDate");
+                    String endDateParam = request.getParameter("endDate");
+                    Date startDate = DateUtil.parseSqlDate(startDateParam);
+                    Date endDate = DateUtil.parseSqlDate(endDateParam);
+
+                    if (startDateParam != null && !startDateParam.trim().isEmpty() && startDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+                    if (endDateParam != null && !endDateParam.trim().isEmpty() && endDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+
                     String status = request.getParameter("status");
 
                     int managerId;
@@ -289,6 +309,7 @@ public class ProjectServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
+            getServletContext().log("Unexpected error in ProjectServlet", e);
             session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 

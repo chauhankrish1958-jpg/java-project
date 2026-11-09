@@ -171,4 +171,21 @@ public class ProjectServletAuthorizationTest {
         verify(request).getRequestDispatcher("/WEB-INF/views/member/project-detail.jsp");
         verify(dispatcher).forward(request, response);
     }
+
+    @Test
+    @DisplayName("Verify ProjectServlet POST with malformed date sets flash_error with expected date format")
+    public void testProjectCreateWithMalformedDateSetsFlashError() throws ServletException, IOException {
+        when(request.getRequestURI()).thenReturn("/protrack/admin/projects");
+        when(request.getParameter("action")).thenReturn("create");
+        when(request.getParameter("title")).thenReturn("Valid Title");
+        when(request.getParameter("startDate")).thenReturn("invalid-date-format");
+        when(request.getParameter("endDate")).thenReturn("2026-12-31");
+
+        User admin = UserFactory.createUser(1, "Admin", "admin@protrack.com", "hash", Role.ADMIN, "ACTIVE");
+        when(session.getAttribute("currentUser")).thenReturn(admin);
+
+        projectServlet.doPost(request, response);
+
+        verify(session).setAttribute(eq("flash_error"), contains("Invalid date format (expected yyyy-MM-dd)"));
+    }
 }

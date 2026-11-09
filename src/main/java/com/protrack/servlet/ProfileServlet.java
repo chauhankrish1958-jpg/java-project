@@ -73,10 +73,9 @@ public class ProfileServlet extends HttpServlet {
 
                 userService.updateProfile(currentUser.getId(), fullName, email);
 
-                // Update session object
-                currentUser.setFullName(fullName);
-                currentUser.setEmail(email);
-                session.setAttribute("currentUser", currentUser);
+                // Reload fresh user from DB to ensure trimmed and lowercased values are in session
+                User updatedUser = userService.getUserById(currentUser.getId());
+                session.setAttribute("currentUser", updatedUser);
                 session.setAttribute("flash_success", "Profile details updated successfully.");
             } else if ("changePassword".equalsIgnoreCase(action)) {
                 String currentPassword = request.getParameter("currentPassword");
@@ -93,6 +92,7 @@ public class ProfileServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
+            getServletContext().log("Unexpected error in ProfileServlet", e);
             session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 

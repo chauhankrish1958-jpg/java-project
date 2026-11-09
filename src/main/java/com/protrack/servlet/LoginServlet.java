@@ -32,9 +32,19 @@ public class LoginServlet extends HttpServlet {
             throws ServletException, IOException {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
+        String ip = request.getRemoteAddr();
+
+        com.protrack.util.LoginAttemptTracker tracker = com.protrack.util.LoginAttemptTracker.getInstance();
+        if (tracker.isLocked(email, ip)) {
+            request.setAttribute("errorMessage", "Too many failed attempts, try again later.");
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
+            return;
+        }
 
         try {
             User user = authService.authenticate(email, password);
+            tracker.resetAttempts(email, ip);
 
             // Create session and protect against session fixation attacks
             HttpSession session = request.getSession(true);
@@ -48,11 +58,20 @@ public class LoginServlet extends HttpServlet {
 
             // Redirect to role-specific dashboard
             response.sendRedirect(request.getContextPath() + user.getDashboardUrl());
+        } catch (com.protrack.exception.InvalidCredentialsException e) {
+            tracker.recordFailedAttempt(email, ip);
+            String message = tracker.isLocked(email, ip)
+                    ? "Too many failed attempts, try again later."
+                    : "Invalid email or password.";
+            request.setAttribute("errorMessage", message);
+            request.setAttribute("email", email);
+            request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
         } catch (AppException e) {
             request.setAttribute("errorMessage", e.getMessage());
             request.setAttribute("email", email);
             request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
         } catch (Exception e) {
+            getServletContext().log("Unexpected error during login", e);
             request.setAttribute("errorMessage", "An unexpected error occurred during login. Please try again.");
             request.setAttribute("email", email);
             request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);

@@ -176,8 +176,17 @@ public class TaskServlet extends HttpServlet {
                     int assignedTo = ValidationUtil.parsePositiveInt(request.getParameter("assignedTo"), 0);
                     String priorityStr = request.getParameter("priority");
                     String statusStr = request.getParameter("status");
-                    Date startDate = DateUtil.parseSqlDate(request.getParameter("startDate"));
-                    Date dueDate = DateUtil.parseSqlDate(request.getParameter("dueDate"));
+                    String startDateParam = request.getParameter("startDate");
+                    String dueDateParam = request.getParameter("dueDate");
+                    Date startDate = DateUtil.parseSqlDate(startDateParam);
+                    Date dueDate = DateUtil.parseSqlDate(dueDateParam);
+
+                    if (startDateParam != null && !startDateParam.trim().isEmpty() && startDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+                    if (dueDateParam != null && !dueDateParam.trim().isEmpty() && dueDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
 
                     TaskPriority priority = TaskPriority.fromString(priorityStr);
                     TaskStatus status = TaskStatus.fromString(statusStr);
@@ -216,8 +225,17 @@ public class TaskServlet extends HttpServlet {
                     int assignedTo = ValidationUtil.parsePositiveInt(request.getParameter("assignedTo"), 0);
                     String priorityStr = request.getParameter("priority");
                     String statusStr = request.getParameter("status");
-                    Date startDate = DateUtil.parseSqlDate(request.getParameter("startDate"));
-                    Date dueDate = DateUtil.parseSqlDate(request.getParameter("dueDate"));
+                    String startDateParam = request.getParameter("startDate");
+                    String dueDateParam = request.getParameter("dueDate");
+                    Date startDate = DateUtil.parseSqlDate(startDateParam);
+                    Date dueDate = DateUtil.parseSqlDate(dueDateParam);
+
+                    if (startDateParam != null && !startDateParam.trim().isEmpty() && startDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
+                    if (dueDateParam != null && !dueDateParam.trim().isEmpty() && dueDate == null) {
+                        throw new AppException("Invalid date format (expected yyyy-MM-dd)");
+                    }
 
                     TaskPriority priority = TaskPriority.fromString(priorityStr);
                     TaskStatus status = TaskStatus.fromString(statusStr);
@@ -266,6 +284,7 @@ public class TaskServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
+            getServletContext().log("Unexpected error in TaskServlet", e);
             session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 

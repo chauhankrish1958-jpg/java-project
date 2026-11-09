@@ -69,6 +69,7 @@ public class SettingsServlet extends HttpServlet {
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
+            getServletContext().log("Unexpected error in SettingsServlet", e);
             session.setAttribute("flash_error", "An unexpected system error occurred. Please try again.");
         }
 

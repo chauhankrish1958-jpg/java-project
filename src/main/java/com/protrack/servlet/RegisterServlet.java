@@ -67,6 +67,7 @@ public class RegisterServlet extends HttpServlet {
             request.setAttribute("email", email);
             request.getRequestDispatcher("/WEB-INF/views/auth/register.jsp").forward(request, response);
         } catch (Exception e) {
+            getServletContext().log("Unexpected error during registration", e);
             request.setAttribute("errorMessage", "Registration failed due to a system error. Please try again.");
             request.setAttribute("fullName", fullName);
             request.setAttribute("email", email);

@@ -50,7 +50,14 @@
                 <li><a class="dropdown-item py-2" href="<%= navCp %>/profile"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
                 <li><a class="dropdown-item py-2" href="<%= navCp %>/activity"><i class="bi bi-clock-history me-2 text-primary"></i> Activity Log</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item py-2 text-danger" href="<%= navCp %>/logout"><i class="bi bi-box-arrow-right me-2 text-danger"></i> Logout</a></li>
+                <li>
+                    <form action="<%= navCp %>/logout" method="POST" class="m-0 p-0">
+                        <input type="hidden" name="csrfToken" value="<%= com.protrack.util.CSRFTokenUtil.getToken(session) %>">
+                        <button type="submit" class="dropdown-item py-2 text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                            <i class="bi bi-box-arrow-right me-2 text-danger"></i> Logout
+                        </button>
+                    </form>
+                </li>
             </ul>
         </div>
         <% } %>

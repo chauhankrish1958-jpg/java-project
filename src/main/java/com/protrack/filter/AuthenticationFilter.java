@@ -10,11 +10,9 @@ import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
 import java.util.Optional;
 
@@ -22,7 +20,6 @@ import java.util.Optional;
  * Authentication and Role-Based Access Control (RBAC) Filter.
  * Enforces session verification and prevents URL tampering across roles.
  */
-@WebFilter(filterName = "AuthenticationFilter", urlPatterns = "/*")
 public class AuthenticationFilter implements Filter {
 
     private final UserDAO userDAO;

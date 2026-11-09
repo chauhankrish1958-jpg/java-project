@@ -6,14 +6,11 @@ import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
-
 import java.io.IOException;
 
 /**
  * Filter ensuring all requests and responses enforce UTF-8 character encoding.
  */
-@WebFilter(filterName = "EncodingFilter", urlPatterns = "/*")
 public class EncodingFilter implements Filter {
 
     private static final String ENCODING = "UTF-8";

@@ -77,10 +77,13 @@
             <i class="bi bi-person-circle"></i>
             <span>My Profile</span>
         </a>
-        <a href="<%= cp %>/logout" class="nav-link-custom text-danger">
-            <i class="bi bi-box-arrow-right text-danger"></i>
-            <span>Logout</span>
-        </a>
+        <form action="<%= cp %>/logout" method="POST" class="m-0 p-0">
+            <input type="hidden" name="csrfToken" value="<%= com.protrack.util.CSRFTokenUtil.getToken(session) %>">
+            <button type="submit" class="nav-link-custom text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                <i class="bi bi-box-arrow-right text-danger"></i>
+                <span>Logout</span>
+            </button>
+        </form>
     </div>
 
     <!-- User Profile Footer -->

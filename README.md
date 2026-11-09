@@ -47,7 +47,7 @@
 | **Visual Analytics** | Chart.js | Chart.js 4.4.1 (Doughnut & Bar charts) |
 | **Password & Token Security** | BCrypt & SecureRandom | OpenBSD Blowfish password hashing & cryptographic CSRF tokens |
 | **Build & Packaging Tool** | Apache Maven | Maven 3.9+ (Produces standard `protrack.war`) |
-| **Automated Testing** | JUnit 5 & Mockito | 52 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
+| **Automated Testing** | JUnit 5 & Mockito | 63 automated unit tests with mocked JDBC & services (JUnit Jupiter 5.10.2 + Mockito 5.11.0) |
 
 ---
 
@@ -101,7 +101,6 @@ ProTrack strictly adheres to the industry-standard **Model-View-Controller (MVC)
 protrack/
 ├── pom.xml                               # Maven project configuration (dependencies & plugins)
 ├── mvnw / mvnw.cmd                       # Maven wrapper scripts
-├── database.sql                          # Database creation, schema & seed records
 ├── README.md                             # Comprehensive project documentation
 ├── src/
 │   ├── main/
@@ -142,6 +141,8 @@ protrack/
 │       │   ├── service/UserServiceProtectionTest.java # Admin self-protection & last admin safeguard tests
 │       │   ├── servlet/ProjectServletAuthorizationTest.java # Project ownership & member access tests
 │       │   ├── servlet/TaskServletAuthorizationTest.java    # Cross-project move & manager task scope tests
+│       │   ├── servlet/LogoutServletTest.java               # POST-only CSRF-protected logout tests
+│       │   ├── util/LoginAttemptTrackerTest.java   # Rate limiting & brute-force lockout tests
 │       │   ├── util/XSSSanitizationTest.java       # HTML/script injection neutralization tests
 │       │   └── ProTrackUnitTest.java               # Core unit tests (BCrypt, validation, enums)
 │       └── resources/
@@ -350,11 +351,11 @@ erDiagram
    ```bash
    mysql -u root -p
    ```
-3. Run the provided `database.sql` script:
+3. Run the provided database initialization script from `src/main/resources/database.sql`:
    ```sql
-   source /path/to/project/database.sql;
+   source /path/to/project/src/main/resources/database.sql;
    ```
-   *(Or copy-paste the entire contents of `database.sql` into MySQL Workbench and execute).*
+   *(Or copy-paste the entire contents of `src/main/resources/database.sql` into MySQL Workbench and execute).*
 
 ### Step 2: Configure Database Credentials
 Edit `src/main/resources/db.properties` to match your local MySQL configuration:
@@ -430,12 +431,14 @@ Execute the entire test suite using:
 ./mvnw test
 ```
 
-### Automated Test Suite Overview (52 Tests — 100% Passing):
+### Automated Test Suite Overview (63 Tests — 100% Passing):
 
 | Test Suite Class | Tests | Category | Key Assertions & Scenarios Verified |
 | :--- | :---: | :--- | :--- |
-| **`TaskServletAuthorizationTest`** | 5 | Servlet & Security | • Project Manager blocked from cross-project task move (target project ownership check)<br>• Project Manager blocked from editing tasks in unmanaged projects<br>• Manager `/manager/tasks` scoped to manager's projects at DAO level<br>• Manager searching unowned `projectId` returns empty list<br>• Administrator sees all tasks across all projects |
-| **`ProjectServletAuthorizationTest`** | 5 | Servlet & Ownership | • Project Manager viewing unmanaged project denied with HTTP 403 Forbidden (`403.jsp`)<br>• Project Manager viewing owned project succeeds (`manager/project-detail.jsp`)<br>• Administrator viewing any project workspace succeeds (`admin/project-detail.jsp`)<br>• Team Member viewing unassigned project denied with HTTP 403 Forbidden<br>• Team Member viewing assigned project succeeds and receives filtered list containing only their own tasks (`member/project-detail.jsp`) |
+| **`TaskServletAuthorizationTest`** | 6 | Servlet & Security | • Project Manager blocked from cross-project task move (target project ownership check)<br>• Project Manager blocked from editing tasks in unmanaged projects<br>• Manager `/manager/tasks` scoped to manager's projects at DAO level<br>• Manager searching unowned `projectId` returns empty list<br>• Administrator sees all tasks across all projects<br>• Malformed date strings trigger descriptive format error |
+| **`ProjectServletAuthorizationTest`** | 6 | Servlet & Ownership | • Project Manager viewing unmanaged project denied with HTTP 403 Forbidden (`403.jsp`)<br>• Project Manager viewing owned project succeeds (`manager/project-detail.jsp`)<br>• Administrator viewing any project workspace succeeds (`admin/project-detail.jsp`)<br>• Team Member viewing unassigned project denied with HTTP 403 Forbidden<br>• Team Member viewing assigned project succeeds and receives filtered list containing only their own tasks (`member/project-detail.jsp`)<br>• Malformed date strings trigger descriptive format error |
+| **`LogoutServletTest`** | 4 | Servlet & CSRF | • GET /logout while logged in safely redirects to dashboard without invalidating session<br>• GET /logout while unauthenticated returns HTTP 405 Method Not Allowed<br>• POST /logout with valid CSRF token invalidates session and redirects to /login<br>• POST /logout with missing or invalid CSRF token returns HTTP 403 Forbidden |
+| **`LoginAttemptTrackerTest`** | 5 | Security & Rate Limiting | • Brand new email/IP combination is not locked<br>• 1 to 4 failed login attempts do not trigger lockout<br>• Exactly 5 failed attempts locks target key for 5 minutes<br>• Successful login immediately resets failed attempt counter<br>• Lock tracking is strictly isolated per email + IP combination |
 | **`UserServiceProtectionTest`** | 7 | Service & RBAC Defense | • Administrator cannot change their own role away from `ADMIN`<br>• Administrator cannot deactivate their own account status<br>• Cannot demote the last remaining active administrator<br>• Cannot deactivate the last remaining active administrator<br>• Cannot delete the last remaining active administrator<br>• User self-deletion strictly rejected with clear error message<br>• Demoting an administrator succeeds when multiple active administrators exist |
 | **`TaskAuthorizationTest`** | 9 | Service & Assignee Security | • Team members can update status on tasks assigned directly to their `userId`<br>• Team members denied with `UnauthorizedAccessException` when attempting to alter unassigned tasks<br>• Team members denied when attempting to alter other team members' tasks<br>• Administrators can update status of any task across all projects<br>• Assignee validation: non-existent user rejected<br>• Assignee validation: inactive user rejected<br>• Assignee validation: user without `Role.TEAM_MEMBER` rejected<br>• Assignee validation: user not assigned to the task's project rejected<br>• Assignee validation: valid active project member succeeds |
 | **`SecurityRBACAndAuthTest`** | 9 | Security & Filters | • Unauthenticated requests safely redirected to `/login`<br>• Semicolon matrix parameter auth bypass neutralized (`/manager/tasks;x=.css` denied)<br>• RBAC role mismatch returns HTTP 403 Forbidden<br>• Static asset whitelist (`/assets/*`) bypasses auth without risk<br>• Missing CSRF token on POST yields HTTP 403<br>• Invalid CSRF token on POST yields HTTP 403<br>• Valid session CSRF token on POST passes filter successfully<br>• Stale session: deactivated user in DB has session invalidated and redirected to `/login`<br>• Stale session: role update in DB dynamically refreshes session role and updates RBAC enforcement |
@@ -446,7 +449,7 @@ Execute the entire test suite using:
 
 ```
 [INFO] Results:
-[INFO] Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 63, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 

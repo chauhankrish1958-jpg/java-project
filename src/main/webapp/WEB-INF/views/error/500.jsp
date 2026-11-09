@@ -1,7 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isErrorPage="true" %>
 <%@ page import="com.protrack.model.User" %>
-<%@ page import="com.protrack.util.ValidationUtil" %>
 <%
+    if (exception != null) {
+        application.log("HTTP 500 Internal Server Error encountered: " + exception.getMessage(), exception);
+    }
     User currentUser = (User) session.getAttribute("currentUser");
     String cp = request.getContextPath();
     String returnUrl = currentUser != null ? cp + currentUser.getDashboardUrl() : cp + "/login";
@@ -31,13 +33,8 @@
     <h1 class="display-5 fw-bold text-dark mb-1">500</h1>
     <h4 class="fw-bold text-danger mb-3">Internal System Error</h4>
     <p class="text-secondary mb-4">
-        A server-side exception occurred while processing your request. Please ensure the MySQL database is running and credentials in <code class="bg-light px-2 py-1 rounded">db.properties</code> are valid.
+        An unexpected internal server error occurred while processing your request. The system administrator has been notified. Please try again later.
     </p>
-    <% if (exception != null && exception.getMessage() != null) { %>
-    <div class="alert alert-light border small text-start font-monospace mb-4 text-truncate">
-        <%= ValidationUtil.escapeXml(exception.getMessage()) %>
-    </div>
-    <% } %>
     <div>
         <a href="<%= returnUrl %>" class="btn btn-primary px-4 py-2 fw-medium">
             <i class="bi bi-arrow-clockwise me-1"></i> Return to Safety

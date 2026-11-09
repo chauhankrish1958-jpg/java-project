@@ -1,8 +1,15 @@
--- =====================================================================
+-- ==============================================================================
+-- WARNING: DESTRUCTIVE SCRIPT / DATA LOSS WARNING
+-- ==============================================================================
+-- This script contains DROP TABLE IF EXISTS statements that will permanently
+-- delete all existing schema tables, data, users, projects, tasks, and audit logs.
+-- DO NOT RUN IN A PRODUCTION ENVIRONMENT WITHOUT A BACKUP.
+-- Intended for fresh development initialization and academic review only.
+-- ==============================================================================
 -- ProTrack - Online Project Management Tool Database Schema & Seed Data
 -- Database: project_management_db
 -- Compatibility: MySQL 5.7+ / MySQL 8.0+ / MariaDB 10.3+
--- =====================================================================
+-- ==============================================================================
 
 CREATE DATABASE IF NOT EXISTS `project_management_db`
     CHARACTER SET utf8mb4

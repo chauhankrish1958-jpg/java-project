@@ -28,12 +28,12 @@ public class DatabaseInitializer {
         InputStream in = DatabaseInitializer.class.getClassLoader().getResourceAsStream("database.sql");
         if (in == null) {
             // Check filesystem if not in classpath
-            java.io.File sqlFile = new java.io.File("database.sql");
+            java.io.File sqlFile = new java.io.File("src/main/resources/database.sql");
             if (sqlFile.exists()) {
                 try {
                     in = new java.io.FileInputStream(sqlFile);
                 } catch (Exception e) {
-                    System.err.println("[DatabaseInitializer] Error opening database.sql: " + e.getMessage());
+                    System.err.println("[DatabaseInitializer] Error opening src/main/resources/database.sql: " + e.getMessage());
                 }
             }
         }

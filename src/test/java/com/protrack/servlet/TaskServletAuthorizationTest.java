@@ -170,4 +170,25 @@ public class TaskServletAuthorizationTest {
         verify(mockTaskService).searchTasks(any(), any(), any(), any(), any(), isNull());
         verify(dispatcher).forward(request, response);
     }
+
+    @Test
+    @DisplayName("Verify TaskServlet POST with malformed date sets flash_error with expected date format")
+    public void testTaskCreateWithMalformedDateSetsFlashError() throws ServletException, IOException, AppException {
+        when(request.getRequestURI()).thenReturn("/protrack/manager/tasks");
+        when(request.getParameter("action")).thenReturn("create");
+        when(request.getParameter("projectId")).thenReturn("1");
+        when(request.getParameter("title")).thenReturn("Valid Task");
+        when(request.getParameter("startDate")).thenReturn("2026-01-01");
+        when(request.getParameter("dueDate")).thenReturn("invalid-due-date");
+
+        User manager = UserFactory.createUser(5, "Manager", "pm@protrack.com", "hash", Role.PROJECT_MANAGER, "ACTIVE");
+        when(session.getAttribute("currentUser")).thenReturn(manager);
+
+        Project project = new Project(1, "Project 1", "Desc", null, null, 5, "PLANNING");
+        when(mockProjectService.getProjectById(1)).thenReturn(project);
+
+        taskServlet.doPost(request, response);
+
+        verify(session).setAttribute(eq("flash_error"), contains("Invalid date format (expected yyyy-MM-dd)"));
+    }
 }

@@ -13,6 +13,30 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
+    <!-- Application Lifecycle Listeners -->
+    <listener>
+        <listener-class>com.protrack.listener.DBPoolContextListener</listener-class>
+    </listener>
+
+    <!-- Explicit Filter Pipeline Ordering: EncodingFilter First, then AuthenticationFilter -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.protrack.filter.EncodingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.protrack.filter.AuthenticationFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!-- Session Management Configuration -->
     <session-config>
         <session-timeout>30</session-timeout>
@@ -21,6 +45,11 @@
             <!-- Set to true when terminating TLS/HTTPS in production -->
             <secure>false</secure>
             <name>PROTRACK_SESSION</name>
+            <!-- Servlet 6 attribute declaration for SameSite cookie protection -->
+            <attribute>
+                <attribute-name>SameSite</attribute-name>
+                <attribute-value>Lax</attribute-value>
+            </attribute>
         </cookie-config>
         <tracking-mode>COOKIE</tracking-mode>
     </session-config>
