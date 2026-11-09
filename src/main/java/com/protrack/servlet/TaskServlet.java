@@ -223,6 +223,11 @@ public class TaskServlet extends HttpServlet {
                 }
                 default -> session.setAttribute("flash_error", "Unknown action: " + action);
             }
+        } catch (com.protrack.exception.UnauthorizedAccessException e) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            request.setAttribute("errorMessage", e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
+            return;
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {

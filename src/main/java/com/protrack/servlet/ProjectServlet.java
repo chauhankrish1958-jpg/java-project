@@ -130,8 +130,8 @@ public class ProjectServlet extends HttpServlet {
         // Security: Team Members cannot perform project administrative actions
         if (userRole == Role.TEAM_MEMBER) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            session.setAttribute("flash_error", "Access Denied: Team members are not permitted to modify projects.");
-            response.sendRedirect(request.getContextPath() + "/member/projects");
+            request.setAttribute("errorMessage", "Access Denied: Team members are not permitted to modify projects.");
+            request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
             return;
         }
 
@@ -237,6 +237,11 @@ public class ProjectServlet extends HttpServlet {
                 }
                 default -> session.setAttribute("flash_error", "Unknown action: " + action);
             }
+        } catch (com.protrack.exception.UnauthorizedAccessException e) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            request.setAttribute("errorMessage", e.getMessage());
+            request.getRequestDispatcher("/WEB-INF/views/error/403.jsp").forward(request, response);
+            return;
         } catch (AppException e) {
             session.setAttribute("flash_error", e.getMessage());
         } catch (Exception e) {
